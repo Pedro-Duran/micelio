@@ -35,9 +35,7 @@ public class EventServiceImpl implements EventService {
     public List<EventDTO.Response.Summary> getSummary() {
         Map<Long, Long> viewCounts = toMap(eventRepository.countByPostAndType(EventType.VIEW));
         Map<Long, Long> clickCounts = toMap(eventRepository.countByPostAndType(EventType.CLICK_NODE));
-        Map<Long, Double> avgDurations = toDoubleMap(
-            eventRepository.avgDurationByPostAndType(EventType.VIEW)
-        );
+        Map<Long, Double> avgDurations = toDoubleMap(eventRepository.avgDurationByPostAndType(EventType.VIEW));
 
         Set<Long> postIds = new HashSet<>();
         postIds.addAll(viewCounts.keySet());
@@ -59,6 +57,33 @@ public class EventServiceImpl implements EventService {
         }
 
         return summaries;
+    }
+
+    @Override
+    public List<EventDTO.Response.ReferrerSummary> getReferrerSummary() {
+        Map<String, Long> totals = new HashMap<>();
+        for (Object[] row : eventRepository.countByReferrer()) {
+            totals.put((String) row[0], (Long) row[1]);
+        }
+
+        Map<String, Map<String, Long>> byPlatform = new HashMap<>();
+        for (Object[] row : eventRepository.countByReferrerAndPlatform()) {
+            String referrer = (String) row[0];
+            String platform = (String) row[1];
+            long count = (Long) row[2];
+            byPlatform.computeIfAbsent(referrer, k -> new HashMap<>()).put(platform, count);
+        }
+
+        List<EventDTO.Response.ReferrerSummary> result = new ArrayList<>();
+        for (String username : totals.keySet()) {
+            result.add(new EventDTO.Response.ReferrerSummary(
+                username,
+                totals.get(username),
+                byPlatform.getOrDefault(username, Collections.emptyMap())
+            ));
+        }
+
+        return result;
     }
 
     private Map<Long, Long> toMap(List<Object[]> rows) {

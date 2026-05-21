@@ -32,6 +32,12 @@ public class Event {
     @Column(nullable = true)
     private Long duration;
 
+    @Column(nullable = true)
+    private String utmSource;
+
+    @Column(nullable = true)
+    private String referredBy;
+
     @PrePersist
     protected void onCreate() {
         this.timestamp = LocalDateTime.now();

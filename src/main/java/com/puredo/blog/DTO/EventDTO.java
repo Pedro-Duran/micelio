@@ -4,6 +4,8 @@ import com.puredo.blog.Entity.EventType;
 import lombok.Data;
 import lombok.Value;
 
+import java.util.Map;
+
 public enum EventDTO {;
 
     public enum Request {;
@@ -15,6 +17,8 @@ public enum EventDTO {;
             EventType eventType;
             String sessionId;
             Long duration;
+            String utmSource;
+            String referredBy;
         }
     }
 
@@ -28,6 +32,8 @@ public enum EventDTO {;
             String sessionId;
             String timestamp;
             Long duration;
+            String utmSource;
+            String referredBy;
         }
 
         @Value
@@ -37,6 +43,13 @@ public enum EventDTO {;
             long viewCount;
             double avgDuration;
             long nodeClickCount;
+        }
+
+        @Value
+        public static class ReferrerSummary {
+            String username;
+            long totalReferrals;
+            Map<String, Long> byPlatform;
         }
     }
 }

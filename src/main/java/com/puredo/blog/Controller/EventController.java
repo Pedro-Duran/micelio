@@ -31,6 +31,8 @@ public class EventController {
         event.setEventType(request.getEventType());
         event.setSessionId(request.getSessionId());
         event.setDuration(request.getDuration());
+        event.setUtmSource(request.getUtmSource());
+        event.setReferredBy(request.getReferredBy());
 
         Event saved = eventService.registerEvent(event);
 
@@ -40,7 +42,9 @@ public class EventController {
             saved.getEventType(),
             saved.getSessionId(),
             saved.getTimestamp().toString(),
-            saved.getDuration()
+            saved.getDuration(),
+            saved.getUtmSource(),
+            saved.getReferredBy()
         ));
     }
 
@@ -58,10 +62,17 @@ public class EventController {
                 e.getEventType(),
                 e.getSessionId(),
                 e.getTimestamp().toString(),
-                e.getDuration()
+                e.getDuration(),
+                e.getUtmSource(),
+                e.getReferredBy()
             ))
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/referrers")
+    public ResponseEntity<List<EventDTO.Response.ReferrerSummary>> getReferrerSummary() {
+        return ResponseEntity.ok(eventService.getReferrerSummary());
     }
 }

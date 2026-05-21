@@ -19,4 +19,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e.postId, AVG(e.duration) FROM Event e WHERE e.eventType = :type GROUP BY e.postId")
     List<Object[]> avgDurationByPostAndType(@Param("type") EventType type);
+
+    @Query("SELECT e.referredBy, COUNT(e) FROM Event e WHERE e.referredBy IS NOT NULL GROUP BY e.referredBy")
+    List<Object[]> countByReferrer();
+
+    @Query("SELECT e.referredBy, e.utmSource, COUNT(e) FROM Event e WHERE e.referredBy IS NOT NULL AND e.utmSource IS NOT NULL GROUP BY e.referredBy, e.utmSource")
+    List<Object[]> countByReferrerAndPlatform();
 }
