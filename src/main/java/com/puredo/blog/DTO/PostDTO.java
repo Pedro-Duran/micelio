@@ -50,6 +50,7 @@ public enum PostDTO {;
             String content;
             UserDTO.Response.UsuarioPublico author;
             List<Long> links;
+            List<String> wikilinks;
             String subject;
         }
 
@@ -73,10 +74,11 @@ public enum PostDTO {;
             Long id;
             String title;
             String content;
-            UserDTO.Response.UsuarioPublico author; // Alinhe a resposta ao JSON esperado
+            UserDTO.Response.UsuarioPublico author;
             String createdAt;
             List<Long> links;
             String subject;
+            Boolean isStub;
         }
 
         @Value

@@ -40,7 +40,10 @@ public class Post {
     private List<Long> links;
 
     @Column(nullable = false)
-    private String subject = "Sem Assunto"; // Valor padrão
+    private String subject = "Sem Assunto";
+
+    @Column(name = "is_stub", nullable = false)
+    private boolean stub = false;
 
 
 
