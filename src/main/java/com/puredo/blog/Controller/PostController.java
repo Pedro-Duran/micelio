@@ -32,7 +32,7 @@ public class PostController {
 
     @PostMapping("/createPost")
     public ResponseEntity<PostDTO.Response.Post> createPost(@RequestBody PostDTO.Request.Create request) {
-        Optional<User> author = userService.findByUserName(request.getAuthor().getUsername());
+        Optional<User> author = userService.findByUserName(request.getAuthorUsername());
         if (author.isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }

@@ -45,10 +45,10 @@ public enum PostDTO {;
 
         @Data
         @Value
-        public static class Create implements Title, Content, Author, Subject {
+        public static class Create implements Title, Content, Subject {
             String title;
             String content;
-            UserDTO.Response.UsuarioPublico author;
+            String authorUsername;
             List<Long> links;
             List<String> wikilinks;
             String subject;
