@@ -9,7 +9,7 @@ import java.util.List;
 
 public enum PostDTO {;
 
-    // Interfaces para os campos do DTO
+
     private interface Id {
         Long getId();
     }
@@ -66,7 +66,6 @@ public enum PostDTO {;
         }
     }
 
-    // DTOs para Respostas
     public enum Response {;
 
         @Value
@@ -77,7 +76,7 @@ public enum PostDTO {;
             UserDTO.Response.UsuarioPublico author;
             String createdAt;
             List<Long> links;
-            String subject;
+            String subject;     
             Boolean isStub;
         }
 
