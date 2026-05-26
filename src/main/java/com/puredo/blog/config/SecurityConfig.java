@@ -34,6 +34,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/events/summary").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/comments/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/comments/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

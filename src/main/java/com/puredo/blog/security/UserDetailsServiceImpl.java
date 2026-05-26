@@ -1,6 +1,6 @@
 package com.puredo.blog.security;
 
-import com.puredo.blog.User.UserRepository;
+import com.puredo.blog.Repository.User.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;

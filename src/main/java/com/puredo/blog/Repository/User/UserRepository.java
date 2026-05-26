@@ -1,9 +1,7 @@
-package com.puredo.blog.User;
+package com.puredo.blog.Repository.User;
 
 
-import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.Entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

@@ -1,4 +1,4 @@
-package com.puredo.blog.Event;
+package com.puredo.blog.Repository.Event;
 
 import com.puredo.blog.Entity.Event;
 import com.puredo.blog.Entity.EventType;

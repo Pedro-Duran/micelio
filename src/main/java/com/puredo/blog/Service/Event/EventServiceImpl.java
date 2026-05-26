@@ -1,13 +1,15 @@
-package com.puredo.blog.Event;
+package com.puredo.blog.Service.Event;
 
 import com.puredo.blog.DTO.EventDTO;
 import com.puredo.blog.Entity.Event;
 import com.puredo.blog.Entity.EventType;
-import com.puredo.blog.Post.PostRepository;
+import com.puredo.blog.Repository.Event.EventRepository;
+import com.puredo.blog.Repository.Post.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EventServiceImpl implements EventService {
@@ -22,13 +24,24 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Event registerEvent(Event event) {
-        return eventRepository.save(event);
+    public EventDTO.Response.EventSaved registerEvent(EventDTO.Request.Register request) {
+        Event event = new Event();
+        event.setPostId(request.getPostId());
+        event.setEventType(request.getEventType());
+        event.setSessionId(request.getSessionId());
+        event.setDuration(request.getDuration());
+        event.setUtmSource(request.getUtmSource());
+        event.setReferredBy(request.getReferredBy());
+
+        Event saved = eventRepository.save(event);
+        return toEventSaved(saved);
     }
 
     @Override
-    public List<Event> getEventsByPost(Long postId) {
-        return eventRepository.findByPostId(postId);
+    public List<EventDTO.Response.EventSaved> getEventsByPost(Long postId) {
+        return eventRepository.findByPostId(postId).stream()
+            .map(this::toEventSaved)
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -80,30 +93,39 @@ public class EventServiceImpl implements EventService {
         }
 
         List<EventDTO.Response.ReferrerSummary> result = new ArrayList<>();
-        for (String username : totals.keySet()) {
+        for (String referrer : totals.keySet()) {
             result.add(new EventDTO.Response.ReferrerSummary(
-                username,
-                totals.get(username),
-                byPlatform.getOrDefault(username, Collections.emptyMap())
+                referrer,
+                totals.get(referrer),
+                byPlatform.getOrDefault(referrer, Collections.emptyMap())
             ));
         }
 
         return result;
     }
 
+    private EventDTO.Response.EventSaved toEventSaved(Event e) {
+        return new EventDTO.Response.EventSaved(
+            e.getId(),
+            e.getPostId(),
+            e.getEventType(),
+            e.getSessionId(),
+            e.getTimestamp().toString(),
+            e.getDuration(),
+            e.getUtmSource(),
+            e.getReferredBy()
+        );
+    }
+
     private Map<Long, Long> toMap(List<Object[]> rows) {
         Map<Long, Long> map = new HashMap<>();
-        for (Object[] row : rows) {
-            map.put((Long) row[0], (Long) row[1]);
-        }
+        for (Object[] row : rows) map.put((Long) row[0], (Long) row[1]);
         return map;
     }
 
     private Map<Long, Double> toDoubleMap(List<Object[]> rows) {
         Map<Long, Double> map = new HashMap<>();
-        for (Object[] row : rows) {
-            map.put((Long) row[0], row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
-        }
+        for (Object[] row : rows) map.put((Long) row[0], row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
         return map;
     }
 }

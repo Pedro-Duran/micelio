@@ -1,29 +1,19 @@
-package com.puredo.blog.Post;
-
+package com.puredo.blog.Service.Post;
 
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
-import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 public interface PostService {
-    Post createPost(Post post);
-
+    Optional<Post> createPost(PostDTO.Request.Create request);
+    Optional<Post> updatePost(PostDTO.Request.Update request);
     List<Post> getAllPosts();
-
-
-    Post updatePost(Post existingPost);
-
     void deletePostById(Long id);
-
     Optional<Post> findPostByTitle(String title);
-
     Optional<Post> getPostByID(Long id);
-
-    public List<String> getDistinctSubjects();
-
-    public HashMap<Long, String> findPostsBySubject(String subject);
+    List<String> getDistinctSubjects();
+    HashMap<Long, String> findPostsBySubject(String subject);
 }
