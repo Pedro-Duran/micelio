@@ -23,10 +23,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         com.puredo.blog.Entity.User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
+        String role = user.isSuperuser() ? "SUPERUSER" : "USER";
         return User.builder()
             .username(user.getUsername())
             .password(user.getPassword())
-            .roles("USER")
+            .roles(role)
             .build();
     }
 }

@@ -5,6 +5,7 @@ import com.puredo.blog.Entity.Event;
 import com.puredo.blog.Event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,8 +50,10 @@ public class EventController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<List<EventDTO.Response.Summary>> getSummary() {
-        return ResponseEntity.ok(eventService.getSummary());
+    public ResponseEntity<List<EventDTO.Response.Summary>> getSummary(Authentication authentication) {
+        boolean isSuperuser = authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERUSER"));
+        return ResponseEntity.ok(eventService.getSummary(authentication.getName(), isSuperuser));
     }
 
     @GetMapping("/byPost")

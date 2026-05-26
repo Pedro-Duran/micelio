@@ -32,7 +32,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventDTO.Response.Summary> getSummary() {
+    public List<EventDTO.Response.Summary> getSummary(String username, boolean isSuperuser) {
         Map<Long, Long> viewCounts = toMap(eventRepository.countByPostAndType(EventType.VIEW));
         Map<Long, Long> clickCounts = toMap(eventRepository.countByPostAndType(EventType.CLICK_NODE));
         Map<Long, Double> avgDurations = toDoubleMap(eventRepository.avgDurationByPostAndType(EventType.VIEW));
@@ -40,6 +40,11 @@ public class EventServiceImpl implements EventService {
         Set<Long> postIds = new HashSet<>();
         postIds.addAll(viewCounts.keySet());
         postIds.addAll(clickCounts.keySet());
+
+        if (!isSuperuser) {
+            Set<Long> authorPostIds = new HashSet<>(postRepository.findPostIdsByAuthorUsername(username));
+            postIds.retainAll(authorPostIds);
+        }
 
         List<EventDTO.Response.Summary> summaries = new ArrayList<>();
         for (Long postId : postIds) {
