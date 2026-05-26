@@ -29,4 +29,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p.id FROM Post p WHERE p.author.username = :username")
     List<Long> findPostIdsByAuthorUsername(@Param("username") String username);
 
+    @Query("SELECT p FROM Post p JOIN p.links l WHERE l = :linkedPostId")
+    List<Post> findPostsByLinkId(@Param("linkedPostId") Long linkedPostId);
+
 }

@@ -14,6 +14,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findByPostId(Long postId);
 
+    void deleteByPostId(Long postId);
+
     @Query("SELECT e.postId, COUNT(e) FROM Event e WHERE e.eventType = :type GROUP BY e.postId")
     List<Object[]> countByPostAndType(@Param("type") EventType type);
 
