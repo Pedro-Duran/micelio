@@ -61,7 +61,8 @@ public enum PostDTO {;
             Long id;
             String title;
             String content;
-           List<Long> links;
+            List<Long> links;
+            List<String> wikilinks;
             String subject;
         }
     }

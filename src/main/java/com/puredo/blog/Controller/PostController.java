@@ -115,12 +115,42 @@ public class PostController {
         Post post = existingPost.get();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setLinks(request.getLinks());
         post.setSubject(request.getSubject());
 
         if (request.getContent() != null && !request.getContent().isBlank()) {
             post.setStub(false);
         }
+
+        // Union: existentes + links explícitos + wikilinks resolvidos (sem duplicatas)
+        List<Long> mergedLinks = new ArrayList<>(post.getLinks() != null ? post.getLinks() : List.of());
+
+        if (request.getLinks() != null) {
+            for (Long linkId : request.getLinks()) {
+                if (!mergedLinks.contains(linkId)) mergedLinks.add(linkId);
+            }
+        }
+
+        if (request.getWikilinks() != null) {
+            for (String wikilinkTitle : request.getWikilinks()) {
+                Optional<Post> linked = postService.findPostByTitle(wikilinkTitle);
+                Long resolvedId;
+                if (linked.isPresent()) {
+                    resolvedId = linked.get().getId();
+                } else {
+                    Post stub = new Post();
+                    stub.setTitle(wikilinkTitle);
+                    stub.setContent("");
+                    stub.setAuthor(post.getAuthor());
+                    stub.setSubject(post.getSubject());
+                    stub.setLinks(new ArrayList<>());
+                    stub.setStub(true);
+                    resolvedId = postService.createPost(stub).getId();
+                }
+                if (!mergedLinks.contains(resolvedId)) mergedLinks.add(resolvedId);
+            }
+        }
+
+        post.setLinks(mergedLinks);
 
         Post updatedPost = postService.updatePost(post);
         UserDTO.Response.UsuarioPublico usuarioPublico = convertToUsuarioPublico(updatedPost.getAuthor());
