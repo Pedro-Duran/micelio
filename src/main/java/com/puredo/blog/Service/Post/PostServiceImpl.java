@@ -5,8 +5,13 @@ import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Event.EventRepository;
 import com.puredo.blog.Repository.Post.PostRepository;
+import com.puredo.blog.Repository.Follow.FollowRepository;
 import com.puredo.blog.Repository.User.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +23,15 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, EventRepository eventRepository, UserRepository userRepository) {
+    public PostServiceImpl(PostRepository postRepository, EventRepository eventRepository,
+                           UserRepository userRepository, FollowRepository followRepository) {
         this.postRepository = postRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
     }
 
     @Override
@@ -73,6 +81,44 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<Post> getAllPosts() {
         return postRepository.findAll();
+    }
+
+    @Override
+    public Page<Post> getAllPosts(Pageable pageable) {
+        return postRepository.findAll(pageable);
+    }
+
+    @Override
+    public Page<Post> getFeed(String username, Pageable pageable) {
+        List<Long> followedIds = followRepository.findFollowedIdsByFollowerUsername(username);
+        if (followedIds.isEmpty()) return Page.empty(pageable);
+
+        Pageable sorted = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by("createdAt").descending()
+        );
+        return postRepository.findFeedPosts(followedIds, sorted);
+    }
+
+    @Override
+    public Page<Post> getExplore(String username, Pageable pageable) {
+        Pageable sorted = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by("createdAt").descending()
+        );
+        return postRepository.findByAuthorUsernameNotAndStubFalse(username, sorted);
+    }
+
+    @Override
+    public Page<Post> getPostsByUser(String username, Pageable pageable) {
+        Pageable sorted = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by("createdAt").descending()
+        );
+        return postRepository.findByAuthorUsernameAndStubFalse(username, sorted);
     }
 
     @Override

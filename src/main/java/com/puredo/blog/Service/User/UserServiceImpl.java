@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -52,6 +53,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> findByUserName(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public List<UserDTO.Response.UsuarioPublico> searchUsers(String username) {
+        List<User> users = (username == null || username.isBlank())
+            ? userRepository.findAll()
+            : userRepository.findByUsernameContainingIgnoreCase(username);
+
+        return users.stream()
+            .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null))
+            .collect(Collectors.toList());
     }
 
     @Override

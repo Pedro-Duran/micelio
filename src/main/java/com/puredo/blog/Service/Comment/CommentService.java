@@ -9,5 +9,6 @@ public interface CommentService {
     Optional<CommentDTO.Response.Comment> createComment(CommentDTO.Request.Create request, String username);
     Optional<CommentDTO.Response.Comment> replyToComment(Long parentId, CommentDTO.Request.Create request, String username);
     List<CommentDTO.Response.Comment> getCommentsByPost(Long postId);
+    CommentDTO.Response.Comment updateComment(Long id, CommentDTO.Request.Update request, String username);
     void deleteComment(Long id, String username, boolean isSuperuser);
 }

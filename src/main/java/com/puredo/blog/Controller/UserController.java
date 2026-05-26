@@ -2,9 +2,12 @@ package com.puredo.blog.Controller;
 
 import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.Entity.User;
+import com.puredo.blog.Service.Follow.FollowService;
 import com.puredo.blog.Service.User.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,10 +19,12 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final FollowService followService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, FollowService followService) {
         this.userService = userService;
+        this.followService = followService;
     }
 
     @PostMapping("/createUser")
@@ -59,5 +64,47 @@ public class UserController {
         return userService.findByUserName(username)
             .map(u -> ResponseEntity.ok(new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null)))
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDTO.Response.UsuarioPublico>> searchUsers(
+        @RequestParam(required = false) String username
+    ) {
+        return ResponseEntity.ok(userService.searchUsers(username));
+    }
+
+    // --- Follow ---
+
+    @PostMapping("/{username}/follow")
+    public ResponseEntity<Void> follow(@PathVariable String username, Authentication authentication) {
+        try {
+            followService.follow(authentication.getName(), username);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{username}/follow")
+    public ResponseEntity<Void> unfollow(@PathVariable String username, Authentication authentication) {
+        followService.unfollow(authentication.getName(), username);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{username}/following")
+    public ResponseEntity<List<UserDTO.Response.UsuarioPublico>> getFollowing(@PathVariable String username) {
+        return ResponseEntity.ok(followService.getFollowing(username));
+    }
+
+    @GetMapping("/{username}/followers")
+    public ResponseEntity<List<UserDTO.Response.UsuarioPublico>> getFollowers(@PathVariable String username) {
+        return ResponseEntity.ok(followService.getFollowers(username));
+    }
+
+    @GetMapping("/{username}/isFollowing")
+    public ResponseEntity<Boolean> isFollowing(@PathVariable String username, Authentication authentication) {
+        return ResponseEntity.ok(followService.isFollowing(authentication.getName(), username));
     }
 }

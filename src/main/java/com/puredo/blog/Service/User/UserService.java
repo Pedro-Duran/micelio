@@ -11,6 +11,7 @@ public interface UserService {
     Optional<UserDTO.Response.UsuarioPrivado> updateUser(Long id, UserDTO.Request.Update request);
     void deleteUserById(Long id);
     Optional<User> findByUserName(String username);
+    List<UserDTO.Response.UsuarioPublico> searchUsers(String username);
     Optional<User> getUserById(Long id);
     List<User> getAllUsers();
 }

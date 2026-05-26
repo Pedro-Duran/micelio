@@ -15,6 +15,12 @@ public enum CommentDTO {;
             Long postId;
             String content;
         }
+
+        @Data
+        @Value
+        public static class Update {
+            String content;
+        }
     }
 
     public enum Response {;

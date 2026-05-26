@@ -66,6 +66,19 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    public CommentDTO.Response.Comment updateComment(Long id, CommentDTO.Request.Update request, String username) {
+        Comment comment = commentRepository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("Comentário não encontrado"));
+
+        if (!comment.getAuthor().getUsername().equals(username)) {
+            throw new IllegalStateException("Sem permissão para editar este comentário");
+        }
+
+        comment.setContent(request.getContent());
+        return toDTO(commentRepository.save(comment));
+    }
+
+    @Override
     public void deleteComment(Long id, String username, boolean isSuperuser) {
         Comment comment = commentRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException("Comentário não encontrado"));

@@ -49,6 +49,21 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getCommentsByPost(postId));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<CommentDTO.Response.Comment> updateComment(
+        @PathVariable Long id,
+        @RequestBody CommentDTO.Request.Update request,
+        Authentication authentication
+    ) {
+        try {
+            return ResponseEntity.ok(commentService.updateComment(id, request, authentication.getName()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id, Authentication authentication) {
         boolean isSuperuser = authentication.getAuthorities().stream()

@@ -5,7 +5,10 @@ import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Service.Post.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -32,11 +35,55 @@ public class PostController {
     }
 
     @GetMapping("/verPosts")
-    public ResponseEntity<List<PostDTO.Response.Post>> getAllPosts() {
-        List<PostDTO.Response.Post> responses = postService.getAllPosts().stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<Page<PostDTO.Response.Post>> getAllPosts(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(postService.getAllPosts(PageRequest.of(page, size)).map(this::toResponse));
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<Page<PostDTO.Response.Post>> getFeed(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+            postService.getFeed(authentication.getName(), PageRequest.of(page, size)).map(this::toResponse)
+        );
+    }
+
+    @GetMapping("/explore")
+    public ResponseEntity<Page<PostDTO.Response.Post>> getExplore(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+            postService.getExplore(authentication.getName(), PageRequest.of(page, size)).map(this::toResponse)
+        );
+    }
+
+    @GetMapping("/mine")
+    public ResponseEntity<Page<PostDTO.Response.Post>> getMyPosts(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+            postService.getPostsByUser(authentication.getName(), PageRequest.of(page, size)).map(this::toResponse)
+        );
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostDTO.Response.Post>> searchByUser(
+        @RequestParam String username,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(
+            postService.getPostsByUser(username, PageRequest.of(page, size)).map(this::toResponse)
+        );
     }
 
     @PutMapping("/updatePost")
