@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface PostService {
     Optional<Post> createPost(PostDTO.Request.Create request);
     Optional<Post> updatePost(PostDTO.Request.Update request);
+    Optional<String> updateCover(Long postId, String coverImageUrl);
     List<Post> getAllPosts();
     Page<Post> getAllPosts(Pageable pageable);
     Page<Post> getFeed(String username, Pageable pageable);

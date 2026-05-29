@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false)
     private boolean superuser = false;
 
+    @Column
+    private String avatarUrl;
+
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     @ToString.Exclude

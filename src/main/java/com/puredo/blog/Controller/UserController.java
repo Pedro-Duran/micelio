@@ -3,12 +3,14 @@ package com.puredo.blog.Controller;
 import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Service.Follow.FollowService;
+import com.puredo.blog.Service.Storage.StorageService;
 import com.puredo.blog.Service.User.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,11 +22,13 @@ public class UserController {
 
     private final UserService userService;
     private final FollowService followService;
+    private final StorageService storageService;
 
     @Autowired
-    public UserController(UserService userService, FollowService followService) {
+    public UserController(UserService userService, FollowService followService, StorageService storageService) {
         this.userService = userService;
         this.followService = followService;
+        this.storageService = storageService;
     }
 
     @PostMapping("/createUser")
@@ -37,7 +41,7 @@ public class UserController {
     @GetMapping("/listUsers")
     public ResponseEntity<List<UserDTO.Response.UsuarioPublico>> getAllUsers() {
         List<UserDTO.Response.UsuarioPublico> responses = userService.getAllUsers().stream()
-            .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null))
+            .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null, u.getAvatarUrl()))
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
@@ -62,7 +66,7 @@ public class UserController {
     @GetMapping("/getUserByUsername")
     public ResponseEntity<UserDTO.Response.UsuarioPublico> getUserByUsername(@RequestParam String username) {
         return userService.findByUserName(username)
-            .map(u -> ResponseEntity.ok(new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null)))
+            .map(u -> ResponseEntity.ok(new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null, u.getAvatarUrl())))
             .orElse(ResponseEntity.notFound().build());
     }
 
@@ -71,6 +75,18 @@ public class UserController {
         @RequestParam(required = false) String username
     ) {
         return ResponseEntity.ok(userService.searchUsers(username));
+    }
+
+    @PostMapping("/{id}/avatar")
+    public ResponseEntity<?> uploadAvatar(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            String url = storageService.uploadAvatar(file);
+            return userService.updateAvatar(id, url)
+                .map(avatarUrl -> ResponseEntity.ok((Object) new UserDTO.Upload.AvatarResponse(avatarUrl)))
+                .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // --- Follow ---

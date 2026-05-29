@@ -52,14 +52,14 @@ public class FollowServiceImpl implements FollowService {
     @Override
     public List<UserDTO.Response.UsuarioPublico> getFollowing(String username) {
         return followRepository.findByFollowerUsername(username).stream()
-            .map(f -> new UserDTO.Response.UsuarioPublico(f.getFollowed().getId(), f.getFollowed().getUsername(), null))
+            .map(f -> new UserDTO.Response.UsuarioPublico(f.getFollowed().getId(), f.getFollowed().getUsername(), null, f.getFollowed().getAvatarUrl()))
             .collect(Collectors.toList());
     }
 
     @Override
     public List<UserDTO.Response.UsuarioPublico> getFollowers(String username) {
         return followRepository.findByFollowedUsername(username).stream()
-            .map(f -> new UserDTO.Response.UsuarioPublico(f.getFollower().getId(), f.getFollower().getUsername(), null))
+            .map(f -> new UserDTO.Response.UsuarioPublico(f.getFollower().getId(), f.getFollower().getUsername(), null, f.getFollower().getAvatarUrl()))
             .collect(Collectors.toList());
     }
 

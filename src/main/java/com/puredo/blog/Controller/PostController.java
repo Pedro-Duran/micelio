@@ -4,12 +4,14 @@ import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Service.Post.PostService;
+import com.puredo.blog.Service.Storage.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +23,12 @@ import java.util.stream.Collectors;
 public class PostController {
 
     private final PostService postService;
+    private final StorageService storageService;
 
     @Autowired
-    public PostController(PostService postService) {
+    public PostController(PostService postService, StorageService storageService) {
         this.postService = postService;
+        this.storageService = storageService;
     }
 
     @PostMapping("/createPost")
@@ -100,6 +104,28 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{postId}/cover")
+    public ResponseEntity<?> uploadCover(@PathVariable Long postId, @RequestParam("file") MultipartFile file) {
+        try {
+            String url = storageService.uploadCover(file);
+            return postService.updateCover(postId, url)
+                .map(coverUrl -> ResponseEntity.ok((Object) new PostDTO.Response.CoverResponse(coverUrl)))
+                .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/images")
+    public ResponseEntity<?> uploadPostImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = storageService.uploadPostImage(file);
+            return ResponseEntity.ok(new PostDTO.Response.ImageUploadResponse(url));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/subjects")
     public List<String> getSubjects() {
         return postService.getDistinctSubjects();
@@ -112,7 +138,7 @@ public class PostController {
 
     private PostDTO.Response.Post toResponse(Post post) {
         UserDTO.Response.UsuarioPublico author = new UserDTO.Response.UsuarioPublico(
-            post.getAuthor().getId(), post.getAuthor().getUsername(), null
+            post.getAuthor().getId(), post.getAuthor().getUsername(), null, post.getAuthor().getAvatarUrl()
         );
         return new PostDTO.Response.Post(
             post.getId(),
@@ -122,7 +148,8 @@ public class PostController {
             post.getCreatedAt().toString(),
             post.getLinks(),
             post.getSubject(),
-            post.isStub()
+            post.isStub(),
+            post.getCoverImageUrl()
         );
     }
 }

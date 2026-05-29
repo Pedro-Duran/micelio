@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         User saved = userRepository.save(user);
-        return Optional.of(new UserDTO.Response.UsuarioPublico(saved.getId(), saved.getUsername(), null));
+        return Optional.of(new UserDTO.Response.UsuarioPublico(saved.getId(), saved.getUsername(), null, saved.getAvatarUrl()));
     }
 
     @Override
@@ -42,6 +42,15 @@ public class UserServiceImpl implements UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             User saved = userRepository.save(user);
             return new UserDTO.Response.UsuarioPrivado(saved.getId(), saved.getUsername(), null);
+        });
+    }
+
+    @Override
+    public Optional<String> updateAvatar(Long userId, String avatarUrl) {
+        return userRepository.findById(userId).map(user -> {
+            user.setAvatarUrl(avatarUrl);
+            userRepository.save(user);
+            return avatarUrl;
         });
     }
 
@@ -62,7 +71,7 @@ public class UserServiceImpl implements UserService {
             : userRepository.findByUsernameContainingIgnoreCase(username);
 
         return users.stream()
-            .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null))
+            .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null, u.getAvatarUrl()))
             .collect(Collectors.toList());
     }
 

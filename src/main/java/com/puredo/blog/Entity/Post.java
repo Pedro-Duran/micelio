@@ -45,8 +45,8 @@ public class Post {
     @Column(name = "is_stub", nullable = false)
     private boolean stub = false;
 
-
-
+    @Column
+    private String coverImageUrl;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

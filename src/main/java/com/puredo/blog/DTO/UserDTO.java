@@ -51,7 +51,8 @@ public enum UserDTO {;
         public static class UsuarioPublico implements Id, Username, Posts {
             Long id;
             String username;
-            List<Post> posts; // Lista de DTOs simplificados
+            List<Post> posts;
+            String avatarUrl;
         }
 
         @Value
@@ -59,6 +60,14 @@ public enum UserDTO {;
             Long id;
             String username;
             String password;
+        }
+    }
+
+    public enum Upload {;
+
+        @Value
+        public static class AvatarResponse {
+            String avatarUrl;
         }
     }
 }

@@ -77,14 +77,25 @@ public enum PostDTO {;
             UserDTO.Response.UsuarioPublico author;
             String createdAt;
             List<Long> links;
-            String subject;     
+            String subject;
             Boolean isStub;
+            String coverImageUrl;
         }
 
         @Value
         public static class PostSummary implements Id, Title {
             Long id;
             String title;
+        }
+
+        @Value
+        public static class CoverResponse {
+            String coverImageUrl;
+        }
+
+        @Value
+        public static class ImageUploadResponse {
+            String url;
         }
     }
 }
