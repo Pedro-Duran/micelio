@@ -3,6 +3,7 @@ package com.puredo.blog.DTO;
 import com.puredo.blog.Entity.Post;
 import lombok.Data;
 import lombok.Value;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -13,10 +14,17 @@ public enum UserDTO {;
         Long getId();
     }
 
+    @NotNull
     private interface Username {
         String getUsername();
     }
 
+    @NotNull
+    private interface Email {
+        String getEmail();
+    }
+
+    @NotNull
     private interface Password {
         String getPassword();
     }
@@ -33,6 +41,7 @@ public enum UserDTO {;
         public static class Create implements Username, Password {
             String username;
             String password;
+            String email;
         }
 
         @Value

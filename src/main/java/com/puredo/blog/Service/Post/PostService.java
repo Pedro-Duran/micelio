@@ -24,4 +24,5 @@ public interface PostService {
     Optional<Post> getPostByID(Long id);
     List<String> getDistinctSubjects();
     HashMap<Long, String> findPostsBySubject(String subject);
+    boolean subscribeToStub(Long postId, String subscriberUsername);
 }

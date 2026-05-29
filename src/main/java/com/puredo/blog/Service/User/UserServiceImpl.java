@@ -28,9 +28,16 @@ public class UserServiceImpl implements UserService {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             return Optional.empty();
         }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            return Optional.empty();
+        }
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return Optional.empty();
+        }
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
         User saved = userRepository.save(user);
         return Optional.of(new UserDTO.Response.UsuarioPublico(saved.getId(), saved.getUsername(), null, saved.getAvatarUrl()));
     }

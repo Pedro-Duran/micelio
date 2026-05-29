@@ -25,4 +25,16 @@ public class AuthController {
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@RequestBody AuthDTO.Request.ForgotPassword request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody AuthDTO.Request.ResetPassword request) {
+        boolean success = authService.resetPassword(request);
+        return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
 }

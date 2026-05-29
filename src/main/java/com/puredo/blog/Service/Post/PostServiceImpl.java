@@ -2,10 +2,12 @@ package com.puredo.blog.Service.Post;
 
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
+import com.puredo.blog.Entity.StubSubscription;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Event.EventRepository;
-import com.puredo.blog.Repository.Post.PostRepository;
 import com.puredo.blog.Repository.Follow.FollowRepository;
+import com.puredo.blog.Repository.Post.PostRepository;
+import com.puredo.blog.Repository.StubSubscription.StubSubscriptionRepository;
 import com.puredo.blog.Repository.User.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,14 +26,20 @@ public class PostServiceImpl implements PostService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
+    private final StubSubscriptionRepository subscriptionRepository;
+    private final StubNotificationService stubNotificationService;
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, EventRepository eventRepository,
-                           UserRepository userRepository, FollowRepository followRepository) {
+                           UserRepository userRepository, FollowRepository followRepository,
+                           StubSubscriptionRepository subscriptionRepository,
+                           StubNotificationService stubNotificationService) {
         this.postRepository = postRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.followRepository = followRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.stubNotificationService = stubNotificationService;
     }
 
     @Override
@@ -78,6 +86,8 @@ public class PostServiceImpl implements PostService {
         if (existing.isEmpty()) return Optional.empty();
 
         Post post = existing.get();
+        boolean wasStub = post.isStub();
+
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setSubject(request.getSubject());
@@ -94,7 +104,13 @@ public class PostServiceImpl implements PostService {
         resolveWikilinksInto(mergedLinks, request.getWikilinks(), post.getAuthor(), post.getSubject());
         post.setLinks(mergedLinks);
 
-        return Optional.of(postRepository.save(post));
+        Post saved = postRepository.save(post);
+
+        if (wasStub && !saved.isStub()) {
+            stubNotificationService.notifyAndCleanup(saved);
+        }
+
+        return Optional.of(saved);
     }
 
     @Override
@@ -177,6 +193,20 @@ public class PostServiceImpl implements PostService {
             postMap.put((Long) result[0], (String) result[1]);
         }
         return postMap;
+    }
+
+    @Override
+    public boolean subscribeToStub(Long postId, String subscriberUsername) {
+        Optional<Post> postOpt = postRepository.findById(postId);
+        Optional<User> userOpt = userRepository.findByUsername(subscriberUsername);
+        if (postOpt.isEmpty() || userOpt.isEmpty() || !postOpt.get().isStub()) return false;
+
+        Post post = postOpt.get();
+        User user = userOpt.get();
+        if (subscriptionRepository.existsByPostAndUser(post, user)) return true;
+
+        subscriptionRepository.save(new StubSubscription(post, user));
+        return true;
     }
 
     private void resolveWikilinksInto(List<Long> links, List<String> wikilinks, User author, String subject) {

@@ -26,7 +26,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         String role = user.isSuperuser() ? "SUPERUSER" : "USER";
         return User.builder()
             .username(user.getUsername())
-            .password(user.getPassword())
+            .password(user.getPassword() != null ? user.getPassword() : "")
             .roles(role)
             .build();
     }

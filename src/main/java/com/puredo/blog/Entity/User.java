@@ -24,11 +24,17 @@ public class User {
     private String username;
 
     @JsonProperty
-    @Column(nullable = false)
+    @Column
     private String password;
+
+    @Column(unique = true)
+    private String googleId;
 
     @Column(nullable = false)
     private boolean superuser = false;
+
+    @Column(nullable = false, unique = true)
+    private String email;
 
     @Column
     private String avatarUrl;

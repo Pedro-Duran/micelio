@@ -13,6 +13,19 @@ public enum AuthDTO {;
             String username;
             String password;
         }
+
+        @Data
+        @Value
+        public static class ForgotPassword {
+            String email;
+        }
+
+        @Data
+        @Value
+        public static class ResetPassword {
+            String token;
+            String newPassword;
+        }
     }
 
     public enum Response {;

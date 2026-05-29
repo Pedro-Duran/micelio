@@ -128,6 +128,12 @@ public class PostController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{postId}/notify")
+    public ResponseEntity<Void> subscribeToStub(@PathVariable Long postId, Authentication authentication) {
+        boolean ok = postService.subscribeToStub(postId, authentication.getName());
+        return ok ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+
     @PostMapping("/images")
     public ResponseEntity<?> uploadPostImage(@RequestParam("file") MultipartFile file) {
         try {
