@@ -63,6 +63,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public Optional<String> removeCover(Long postId) {
+        return postRepository.findById(postId).map(post -> {
+            String existing = post.getCoverImageUrl();
+            post.setCoverImageUrl(null);
+            postRepository.save(post);
+            return existing;
+        });
+    }
+
+    @Override
     public Optional<Post> updatePost(PostDTO.Request.Update request) {
         Optional<Post> existing = postRepository.findById(request.getId());
         if (existing.isEmpty()) return Optional.empty();

@@ -89,6 +89,18 @@ public class UserController {
         }
     }
 
+    @DeleteMapping("/{id}/avatar")
+    public ResponseEntity<?> deleteAvatar(@PathVariable Long id) {
+        return userService.removeAvatar(id).map(existingUrl -> {
+            if (existingUrl != null) {
+                try {
+                    storageService.deleteFile(existingUrl);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            return ResponseEntity.noContent().<Void>build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     // --- Follow ---
 
     @PostMapping("/{username}/follow")

@@ -13,6 +13,7 @@ public interface PostService {
     Optional<Post> createPost(PostDTO.Request.Create request);
     Optional<Post> updatePost(PostDTO.Request.Update request);
     Optional<String> updateCover(Long postId, String coverImageUrl);
+    Optional<String> removeCover(Long postId);
     List<Post> getAllPosts();
     Page<Post> getAllPosts(Pageable pageable);
     Page<Post> getFeed(String username, Pageable pageable);

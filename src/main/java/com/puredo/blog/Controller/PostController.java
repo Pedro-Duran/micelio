@@ -116,11 +116,33 @@ public class PostController {
         }
     }
 
+    @DeleteMapping("/{postId}/cover")
+    public ResponseEntity<?> deleteCover(@PathVariable Long postId) {
+        return postService.removeCover(postId).map(existingUrl -> {
+            if (existingUrl != null) {
+                try {
+                    storageService.deleteFile(existingUrl);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            return ResponseEntity.noContent().<Void>build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/images")
     public ResponseEntity<?> uploadPostImage(@RequestParam("file") MultipartFile file) {
         try {
             String url = storageService.uploadPostImage(file);
             return ResponseEntity.ok(new PostDTO.Response.ImageUploadResponse(url));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/images")
+    public ResponseEntity<?> deletePostImage(@RequestParam String url) {
+        try {
+            storageService.deleteFile(url);
+            return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

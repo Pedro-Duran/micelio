@@ -10,6 +10,7 @@ public interface UserService {
     Optional<UserDTO.Response.UsuarioPublico> registerUser(UserDTO.Request.Create request);
     Optional<UserDTO.Response.UsuarioPrivado> updateUser(Long id, UserDTO.Request.Update request);
     Optional<String> updateAvatar(Long userId, String avatarUrl);
+    Optional<String> removeAvatar(Long userId);
     void deleteUserById(Long id);
     Optional<User> findByUserName(String username);
     List<UserDTO.Response.UsuarioPublico> searchUsers(String username);

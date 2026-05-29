@@ -55,6 +55,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Optional<String> removeAvatar(Long userId) {
+        return userRepository.findById(userId).map(user -> {
+            String existing = user.getAvatarUrl();
+            user.setAvatarUrl(null);
+            userRepository.save(user);
+            return existing;
+        });
+    }
+
+    @Override
     public void deleteUserById(Long id) {
         userRepository.deleteById(id);
     }

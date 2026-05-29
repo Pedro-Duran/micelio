@@ -6,4 +6,5 @@ public interface StorageService {
     String uploadAvatar(MultipartFile file);
     String uploadCover(MultipartFile file);
     String uploadPostImage(MultipartFile file);
+    void deleteFile(String url);
 }

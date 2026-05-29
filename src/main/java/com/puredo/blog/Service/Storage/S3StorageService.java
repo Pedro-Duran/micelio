@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -50,6 +51,19 @@ public class S3StorageService implements StorageService {
     public String uploadPostImage(MultipartFile file) {
         String key = "posts/" + Year.now().getValue() + "/" + UUID.randomUUID() + extension(file);
         return upload(file, key);
+    }
+
+    @Override
+    public void deleteFile(String url) {
+        String prefix = "https://" + bucketName + ".s3." + region + ".amazonaws.com/";
+        if (url == null || !url.startsWith(prefix)) {
+            throw new IllegalArgumentException("URL inválida para este bucket");
+        }
+        String key = url.substring(prefix.length());
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+            .bucket(bucketName)
+            .key(key)
+            .build());
     }
 
     private String upload(MultipartFile file, String key) {
