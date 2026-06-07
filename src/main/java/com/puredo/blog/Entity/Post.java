@@ -21,6 +21,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
+    private Long likeCount;
+
     @Column(nullable = false)
     private String title;
 

@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,7 @@ class PostIntegrationTest {
     @Autowired ObjectMapper objectMapper;
 
 
-    @InjectMocks
+    @MockitoBean
     StubNotificationService stubNotificationService;
 
     // ---- POST /api/posts/createPost ----
@@ -95,18 +96,24 @@ class PostIntegrationTest {
                 .andExpect(jsonPath("$.content[0].likedByMe").isBoolean());
     }
 
-   /* @Test
+    @Test
     @Sql("/sql/likes-insert.sql")
     void getAllPosts_likedByAlice_showsLikeCountAndLikedByMe() throws Exception {
-        mockMvc.perform(get("/api/posts/verPosts").param("page", "0").param("size", "10"))
+        mockMvc.perform(get("/api/posts/verPosts")
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                // post 1 foi curtido por alice (likeCount=1, likedByMe=true)
-                .andExpect(jsonPath("$.content[?(@.id == 1)].likeCount[0]").value(1))
-                .andExpect(jsonPath("$.content[?(@.id == 1)].likedByMe[0]").value(true))
-                // post 2 não foi curtido (likeCount=0, likedByMe=false)
-                .andExpect(jsonPath("$.content[?(@.id == 2)].likeCount[0]").value(0))
-                .andExpect(jsonPath("$.content[?(@.id == 2)].likedByMe[0]").value(false));
-    }*/
+
+                // Post 1
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].likeCount").value(1))
+                .andExpect(jsonPath("$.content[0].likedByMe").value(true))
+
+                // Post 2
+                .andExpect(jsonPath("$.content[1].id").value(2))
+                .andExpect(jsonPath("$.content[1].likeCount").value(0))
+                .andExpect(jsonPath("$.content[1].likedByMe").value(false));
+    }
 
     // ---- GET /api/posts/feed ----
 
@@ -174,7 +181,7 @@ class PostIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-   /* @Test
+    @Test
     @Sql("/sql/posts-insert.sql")
     void updatePost_stubBecomesPublished_triggersNotification() throws Exception {
         PostDTO.Request.Update request = new PostDTO.Request.Update(
@@ -186,7 +193,7 @@ class PostIntegrationTest {
                 .andExpect(status().isOk());
 
         verify(stubNotificationService).notifyAndCleanup(any(Post.class));
-    }*/
+    }
 
     // ---- DELETE /api/posts/deletePost ----
 
