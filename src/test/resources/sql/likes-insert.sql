@@ -17,9 +17,6 @@ VALUES
 (3, 'Post Bob 1', 'Bob content', 2, false, null, '2024-01-03 10:00:00'),
 (4, 'Stub Post', '', 1, true, null, '2024-01-04 10:00:00');
 
-INSERT INTO post_subjects (post_id, subject)
-VALUES
-(1, 'Tech'),
-(2, 'Life'),
-(3, 'Tech'),
-(4, 'Tech');
+-- alice curtiu o próprio post 1; post 2 não tem curtidas
+INSERT INTO likes (id, post_id, user_id, created_at)
+VALUES (1, 1, 1, '2024-01-01 11:00:00');

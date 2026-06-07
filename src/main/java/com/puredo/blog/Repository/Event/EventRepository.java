@@ -27,4 +27,35 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e.referredBy, e.utmSource, COUNT(e) FROM Event e WHERE e.referredBy IS NOT NULL AND e.utmSource IS NOT NULL GROUP BY e.referredBy, e.utmSource")
     List<Object[]> countByReferrerAndPlatform();
+
+    @Query(value = """
+            SELECT e.username, COUNT(*) as total
+            FROM events e
+            WHERE e.event_type = 'STUB_SUBSCRIBE' AND e.username IS NOT NULL
+            GROUP BY e.username
+            ORDER BY total DESC
+            LIMIT 20
+            """, nativeQuery = true)
+    List<Object[]> topStubSubscribers();
+
+    @Query(value = """
+            SELECT u.username, COUNT(e.id) AS sub_count, COUNT(DISTINCT e.post_id) AS post_count
+            FROM events e
+            JOIN posts p ON e.post_id = p.id
+            JOIN users u ON p.author_id = u.id
+            WHERE e.event_type = 'STUB_SUBSCRIBE'
+            GROUP BY u.username
+            ORDER BY sub_count DESC
+            LIMIT 20
+            """, nativeQuery = true)
+    List<Object[]> topStubSubscribeAuthors();
+
+    @Query(value = """
+            SELECT e.cover_image_url, COUNT(*) AS clicks, MAX(e.subject) AS subject
+            FROM events e
+            WHERE e.event_type = 'SUBJECT_CLICK' AND e.cover_image_url IS NOT NULL
+            GROUP BY e.cover_image_url
+            ORDER BY clicks DESC
+            """, nativeQuery = true)
+    List<Object[]> coverConversionStats();
 }

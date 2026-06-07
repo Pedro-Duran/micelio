@@ -2,6 +2,8 @@ package com.puredo.blog.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.puredo.blog.DTO.CommentDTO;
+import com.puredo.blog.Entity.EventType;
+import com.puredo.blog.Repository.Event.EventRepository;
 import com.puredo.blog.Service.Email.EmailService;
 import com.puredo.blog.Service.Post.StubNotificationService;
 import com.puredo.blog.Service.Storage.StorageService;
@@ -17,6 +19,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -30,6 +33,7 @@ class CommentIntegrationTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired EventRepository eventRepository;
 
     @MockBean StorageService storageService;
     @MockBean EmailService emailService;
@@ -51,13 +55,30 @@ class CommentIntegrationTest {
     }
 
     @Test
-    void createComment_postNotFound_returns400() throws Exception {
+    @Sql("/sql/comments-insert.sql")
+    void createComment_registersCommentEvent() throws Exception {
+        CommentDTO.Request.Create request = new CommentDTO.Request.Create(1L, "Triggers event");
+
+        mockMvc.perform(post("/api/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        assertThat(eventRepository.findByPostId(1L))
+                .anyMatch(e -> e.getEventType() == EventType.COMMENT && "alice".equals(e.getUsername()));
+    }
+
+    @Test
+    void createComment_postNotFound_returns400AndNoEvent() throws Exception {
         CommentDTO.Request.Create request = new CommentDTO.Request.Create(999L, "Comment");
 
         mockMvc.perform(post("/api/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+
+        assertThat(eventRepository.findByPostId(999L)
+                .stream().anyMatch(e -> e.getEventType() == EventType.COMMENT)).isFalse();
     }
 
     // ---- POST /api/comments/{id}/reply ----
@@ -77,11 +98,10 @@ class CommentIntegrationTest {
 
     @Test
     void replyToComment_parentNotFound_returns404() throws Exception {
-        CommentDTO.Request.Create request = new CommentDTO.Request.Create(1L, "Reply");
-
         mockMvc.perform(post("/api/comments/999/reply")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(
+                                new CommentDTO.Request.Create(1L, "Reply"))))
                 .andExpect(status().isNotFound());
     }
 
@@ -109,11 +129,11 @@ class CommentIntegrationTest {
     @Test
     @Sql("/sql/comments-insert.sql")
     void updateComment_ownComment_returns200WithUpdatedContent() throws Exception {
-        CommentDTO.Request.Update request = new CommentDTO.Request.Update("Updated content");
-
+        // comentário 2 é de alice (author_id=1)
         mockMvc.perform(put("/api/comments/2")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(
+                                new CommentDTO.Request.Update("Updated content"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Updated content"));
     }
@@ -121,21 +141,20 @@ class CommentIntegrationTest {
     @Test
     @Sql("/sql/comments-insert.sql")
     void updateComment_otherUserComment_returns403() throws Exception {
-        CommentDTO.Request.Update request = new CommentDTO.Request.Update("Updated");
-
+        // comentário 1 é de bob (author_id=2)
         mockMvc.perform(put("/api/comments/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(
+                                new CommentDTO.Request.Update("Updated"))))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void updateComment_commentNotFound_returns404() throws Exception {
-        CommentDTO.Request.Update request = new CommentDTO.Request.Update("Updated");
-
         mockMvc.perform(put("/api/comments/999")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(
+                                new CommentDTO.Request.Update("Updated"))))
                 .andExpect(status().isNotFound());
     }
 
@@ -159,6 +178,7 @@ class CommentIntegrationTest {
     @Test
     @Sql("/sql/comments-insert.sql")
     void deleteComment_otherUserComment_returns403() throws Exception {
+        // comentário 1 é de bob
         mockMvc.perform(delete("/api/comments/1"))
                 .andExpect(status().isForbidden());
     }

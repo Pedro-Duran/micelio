@@ -38,6 +38,15 @@ public class Event {
     @Column(nullable = true)
     private String referredBy;
 
+    @Column(nullable = true)
+    private String username;
+
+    @Column(nullable = true)
+    private String subject;
+
+    @Column(nullable = true)
+    private String coverImageUrl;
+
     @PrePersist
     protected void onCreate() {
         this.timestamp = LocalDateTime.now();

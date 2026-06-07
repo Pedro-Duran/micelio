@@ -4,6 +4,7 @@ import com.puredo.blog.Entity.EventType;
 import lombok.Data;
 import lombok.Value;
 
+import java.util.List;
 import java.util.Map;
 
 public enum EventDTO {;
@@ -19,6 +20,8 @@ public enum EventDTO {;
             Long duration;
             String utmSource;
             String referredBy;
+            String subject;
+            String coverImageUrl;
         }
     }
 
@@ -34,6 +37,9 @@ public enum EventDTO {;
             Long duration;
             String utmSource;
             String referredBy;
+            String username;
+            String subject;
+            String coverImageUrl;
         }
 
         @Value
@@ -43,6 +49,8 @@ public enum EventDTO {;
             long viewCount;
             double avgDuration;
             long nodeClickCount;
+            long commentCount;
+            long likeCount;
         }
 
         @Value
@@ -50,6 +58,32 @@ public enum EventDTO {;
             String username;
             long totalReferrals;
             Map<String, Long> byPlatform;
+        }
+
+        @Value
+        public static class SubscriptionAnalytics {
+            List<TopSubscriber> topSubscribers;
+            List<TopAuthor> topAuthors;
+        }
+
+        @Value
+        public static class TopSubscriber {
+            String username;
+            long totalSubscriptions;
+        }
+
+        @Value
+        public static class TopAuthor {
+            String username;
+            long subscriptionCount;
+            long postCount;
+        }
+
+        @Value
+        public static class CoverConversionEntry {
+            String coverImageUrl;
+            long clicks;
+            String subject;
         }
     }
 }

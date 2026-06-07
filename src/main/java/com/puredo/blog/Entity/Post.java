@@ -6,9 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.Cascade;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -34,13 +34,16 @@ public class Post {
     private User author;
 
     @ElementCollection
-    @Column(name = "link", nullable = false)
     @CollectionTable(name = "post_links", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "link", nullable = false)
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     private List<Long> links;
 
-    @Column(nullable = false)
-    private String subject = "Sem Assunto";
+    @ElementCollection
+    @CollectionTable(name = "post_subjects", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "subject", nullable = false)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+    private List<String> subjects = new ArrayList<>();
 
     @Column(name = "is_stub", nullable = false)
     private boolean stub = false;

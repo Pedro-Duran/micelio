@@ -2,6 +2,8 @@ package com.puredo.blog.unit;
 
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
+import com.puredo.blog.Entity.Event;
+import com.puredo.blog.Entity.EventType;
 import com.puredo.blog.Entity.StubSubscription;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Event.EventRepository;
@@ -62,7 +64,7 @@ class PostServiceTest {
         post.setAuthor(alice);
         post.setLinks(new ArrayList<>());
         post.setStub(false);
-        post.setSubject("Tech");
+        post.setSubjects(List.of("Tech"));
         post.setCreatedAt(LocalDateTime.now());
     }
 
@@ -70,7 +72,7 @@ class PostServiceTest {
 
     @Test
     void createPost_authorFound_returnsPost() {
-        PostDTO.Request.Create request = new PostDTO.Request.Create("Test", "Content", "alice", null, null, "Tech");
+        PostDTO.Request.Create request = new PostDTO.Request.Create("Test", "Content", "alice", null, null, List.of("Tech"));
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
         when(postRepository.save(any())).thenReturn(post);
 
@@ -82,7 +84,7 @@ class PostServiceTest {
 
     @Test
     void createPost_authorNotFound_returnsEmpty() {
-        PostDTO.Request.Create request = new PostDTO.Request.Create("Test", "Content", "nobody", null, null, "Tech");
+        PostDTO.Request.Create request = new PostDTO.Request.Create("Test", "Content", "nobody", null, null, List.of("Tech"));
         when(userRepository.findByUsername("nobody")).thenReturn(Optional.empty());
 
         Optional<Post> result = postService.createPost(request);
@@ -94,7 +96,7 @@ class PostServiceTest {
     @Test
     void createPost_withNewWikilink_createsStubAndLinksIt() {
         PostDTO.Request.Create request = new PostDTO.Request.Create(
-                "Main", "Content", "alice", null, List.of("New Topic"), "Tech");
+                "Main", "Content", "alice", null, List.of("New Topic"), List.of("Tech"));
         Post stubPost = new Post();
         stubPost.setStub(true);
         stubPost.setLinks(new ArrayList<>());
@@ -120,7 +122,7 @@ class PostServiceTest {
         existingWiki.setTitle("Existing");
 
         PostDTO.Request.Create request = new PostDTO.Request.Create(
-                "Main", "Content", "alice", null, List.of("Existing"), "Tech");
+                "Main", "Content", "alice", null, List.of("Existing"), List.of("Tech"));
 
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
         when(postRepository.findPostByTitle("Existing")).thenReturn(Optional.of(existingWiki));
@@ -136,7 +138,7 @@ class PostServiceTest {
 
     @Test
     void updatePost_postFound_updatesAndReturns() {
-        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "New Title", "New Content", null, null, "Science");
+        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "New Title", "New Content", null, null, List.of("Science"));
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postRepository.save(any())).thenReturn(post);
 
@@ -148,7 +150,7 @@ class PostServiceTest {
 
     @Test
     void updatePost_postNotFound_returnsEmpty() {
-        PostDTO.Request.Update request = new PostDTO.Request.Update(99L, "Title", "Content", null, null, "Tech");
+        PostDTO.Request.Update request = new PostDTO.Request.Update(99L, "Title", "Content", null, null, List.of("Tech"));
         when(postRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThat(postService.updatePost(request)).isEmpty();
@@ -162,7 +164,7 @@ class PostServiceTest {
         savedPost.setStub(false);
         savedPost.setContent("Real Content");
 
-        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "Title", "Real Content", null, null, "Tech");
+        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "Title", "Real Content", null, null, List.of("Science"));
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postRepository.save(any())).thenReturn(savedPost);
 
@@ -178,7 +180,7 @@ class PostServiceTest {
         Post savedPost = new Post();
         savedPost.setStub(true);
 
-        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "Title", "", null, null, "Tech");
+        PostDTO.Request.Update request = new PostDTO.Request.Update(1L, "Title", "", null, null, List.of("Tech"));
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postRepository.save(any())).thenReturn(savedPost);
 
@@ -312,10 +314,15 @@ class PostServiceTest {
 
         assertThat(result).isTrue();
         verify(subscriptionRepository).save(any(StubSubscription.class));
+        verify(eventRepository).save(argThat((Event e) ->
+                e.getEventType() == EventType.STUB_SUBSCRIBE &&
+                "bob".equals(e.getUsername()) &&
+                Long.valueOf(1L).equals(e.getPostId())
+        ));
     }
 
     @Test
-    void subscribeToStub_alreadySubscribed_returnsTrueWithoutDuplicate() {
+    void subscribeToStub_alreadySubscribed_returnsTrueWithoutSavingEvent() {
         post.setStub(true);
         User bob = new User();
         bob.setUsername("bob");
@@ -328,6 +335,7 @@ class PostServiceTest {
 
         assertThat(result).isTrue();
         verify(subscriptionRepository, never()).save(any());
+        verify(eventRepository, never()).save(argThat((Event e) -> e.getEventType() == EventType.STUB_SUBSCRIBE));
     }
 
     @Test

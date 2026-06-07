@@ -29,7 +29,7 @@ public class EventController {
     @GetMapping("/summary")
     public ResponseEntity<List<EventDTO.Response.Summary>> getSummary(Authentication authentication) {
         boolean isSuperuser = authentication.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERUSER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERUSER"));
         return ResponseEntity.ok(eventService.getSummary(authentication.getName(), isSuperuser));
     }
 
@@ -41,5 +41,15 @@ public class EventController {
     @GetMapping("/referrers")
     public ResponseEntity<List<EventDTO.Response.ReferrerSummary>> getReferrerSummary() {
         return ResponseEntity.ok(eventService.getReferrerSummary());
+    }
+
+    @GetMapping("/subscriptions")
+    public ResponseEntity<EventDTO.Response.SubscriptionAnalytics> getSubscriptionAnalytics() {
+        return ResponseEntity.ok(eventService.getSubscriptionAnalytics());
+    }
+
+    @GetMapping("/coverConversion")
+    public ResponseEntity<List<EventDTO.Response.CoverConversionEntry>> getCoverConversionAnalytics() {
+        return ResponseEntity.ok(eventService.getCoverConversionAnalytics());
     }
 }

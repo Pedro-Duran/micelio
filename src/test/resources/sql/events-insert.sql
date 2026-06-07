@@ -1,9 +1,39 @@
 INSERT INTO users (id, username, email, password, superuser, avatar_url, google_id)
 VALUES (1, 'alice', 'alice@test.com', 'test-password', false, null, null);
 
-INSERT INTO posts (id, title, content, author_id, subject, is_stub, cover_image_url, created_at)
-VALUES (1, 'Post 1', 'Content 1', 1, 'Tech', false, null, '2024-01-01 10:00:00'),
-       (2, 'Post 2', 'Content 2', 1, 'Tech', false, null, '2024-01-02 10:00:00');
+INSERT INTO posts (
+    id,
+    title,
+    content,
+    author_id,
+    is_stub,
+    cover_image_url,
+    created_at
+)
+VALUES
+(
+    1,
+    'Post 1',
+    'Content 1',
+    1,
+    false,
+    null,
+    '2024-01-01 10:00:00'
+),
+(
+    2,
+    'Post 2',
+    'Content 2',
+    1,
+    false,
+    null,
+    '2024-01-02 10:00:00'
+);
+
+INSERT INTO post_subjects (post_id, subject)
+VALUES
+(1, 'Tech'),
+(2, 'Tech');
 
 INSERT INTO events (id, post_id, event_type, session_id, timestamp, duration, utm_source, referred_by)
 VALUES (1, 1, 'VIEW',       'session-1', '2024-01-01 10:00:00', 120,  null,      null),

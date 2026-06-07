@@ -1,6 +1,5 @@
 package com.puredo.blog.DTO;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.Value;
@@ -8,7 +7,6 @@ import lombok.Value;
 import java.util.List;
 
 public enum PostDTO {;
-
 
     private interface Id {
         Long getId();
@@ -22,9 +20,8 @@ public enum PostDTO {;
         String getContent();
     }
 
-
     private interface Author {
-        UserDTO.Response.UsuarioPublico getAuthor(); // Objeto complexo
+        UserDTO.Response.UsuarioPublico getAuthor();
     }
 
     private interface CreatedAt {
@@ -32,38 +29,36 @@ public enum PostDTO {;
     }
 
     @Nullable
-    private interface Links{
+    private interface Links {
         List<Long> getLinks();
     }
 
-
-    private interface Subject{
-        String getSubject();
+    private interface Subjects {
+        List<String> getSubjects();
     }
 
     public enum Request {;
 
         @Data
         @Value
-        public static class Create implements Title, Content, Subject {
+        public static class Create implements Title, Content, Subjects {
             String title;
             String content;
             String authorUsername;
             List<Long> links;
             List<String> wikilinks;
-            String subject;
+            List<String> subjects;
         }
-
 
         @Data
         @Value
-        public static class Update implements Id, Title, Content, Links, Subject {
+        public static class Update implements Id, Title, Content, Links, Subjects {
             Long id;
             String title;
             String content;
             List<Long> links;
             List<String> wikilinks;
-            String subject;
+            List<String> subjects;
         }
     }
 
@@ -77,9 +72,11 @@ public enum PostDTO {;
             UserDTO.Response.UsuarioPublico author;
             String createdAt;
             List<Long> links;
-            String subject;
+            List<String> subjects;
             Boolean isStub;
             String coverImageUrl;
+            long likeCount;
+            boolean likedByMe;
         }
 
         @Value

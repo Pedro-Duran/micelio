@@ -17,10 +17,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     public Optional<Post> findPostByTitle(String title);
 
-    @Query("SELECT DISTINCT p.subject FROM Post p")
+    @Query("SELECT DISTINCT s FROM Post p JOIN p.subjects s")
     List<String> findDistinctSubjects();
 
-    @Query("SELECT p.id, p.title FROM Post p WHERE p.subject = :subject")
+    @Query("SELECT p.id, p.title FROM Post p JOIN p.subjects s WHERE s = :subject")
     List<Object[]> findPostIdsAndTitlesBySubject(@Param("subject") String subject);
 
     @Query("SELECT p.id FROM Post p WHERE p.author.username = :username")
@@ -28,6 +28,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p JOIN p.links l WHERE l = :linkedPostId")
     List<Post> findPostsByLinkId(@Param("linkedPostId") Long linkedPostId);
+
+    Page<Post> findByTitleContainingIgnoreCaseAndStubFalse(String title, Pageable pageable);
 
     Page<Post> findByAuthorUsernameNotAndStubFalse(String username, Pageable pageable);
 

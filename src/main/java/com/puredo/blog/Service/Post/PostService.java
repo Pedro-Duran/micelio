@@ -21,6 +21,7 @@ public interface PostService {
     Page<Post> getPostsByUser(String username, Pageable pageable);
     void deletePostById(Long id);
     Optional<Post> findPostByTitle(String title);
+    Page<Post> searchByTitle(String title, Pageable pageable);
     Optional<Post> getPostByID(Long id);
     List<String> getDistinctSubjects();
     HashMap<Long, String> findPostsBySubject(String subject);

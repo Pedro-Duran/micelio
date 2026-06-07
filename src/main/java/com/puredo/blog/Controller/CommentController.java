@@ -1,7 +1,9 @@
 package com.puredo.blog.Controller;
 
 import com.puredo.blog.DTO.CommentDTO;
+import com.puredo.blog.Entity.EventType;
 import com.puredo.blog.Service.Comment.CommentService;
+import com.puredo.blog.Service.Event.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,31 +19,34 @@ import java.util.NoSuchElementException;
 public class CommentController {
 
     private final CommentService commentService;
+    private final EventService eventService;
 
     @Autowired
-    public CommentController(CommentService commentService) {
+    public CommentController(CommentService commentService, EventService eventService) {
         this.commentService = commentService;
+        this.eventService = eventService;
     }
 
     @PostMapping
     public ResponseEntity<CommentDTO.Response.Comment> createComment(
-        @RequestBody CommentDTO.Request.Create request,
-        Authentication authentication
-    ) {
+            @RequestBody CommentDTO.Request.Create request,
+            Authentication authentication) {
         return commentService.createComment(request, authentication.getName())
-            .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c))
-            .orElse(ResponseEntity.badRequest().build());
+                .map(c -> {
+                    eventService.registerInternalEvent(request.getPostId(), EventType.COMMENT, authentication.getName());
+                    return ResponseEntity.status(HttpStatus.CREATED).body(c);
+                })
+                .orElse(ResponseEntity.badRequest().build());
     }
 
     @PostMapping("/{id}/reply")
     public ResponseEntity<CommentDTO.Response.Comment> replyToComment(
-        @PathVariable Long id,
-        @RequestBody CommentDTO.Request.Create request,
-        Authentication authentication
-    ) {
+            @PathVariable Long id,
+            @RequestBody CommentDTO.Request.Create request,
+            Authentication authentication) {
         return commentService.replyToComment(id, request, authentication.getName())
-            .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c))
-            .orElse(ResponseEntity.notFound().build());
+                .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/byPost")
@@ -51,10 +56,9 @@ public class CommentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CommentDTO.Response.Comment> updateComment(
-        @PathVariable Long id,
-        @RequestBody CommentDTO.Request.Update request,
-        Authentication authentication
-    ) {
+            @PathVariable Long id,
+            @RequestBody CommentDTO.Request.Update request,
+            Authentication authentication) {
         try {
             return ResponseEntity.ok(commentService.updateComment(id, request, authentication.getName()));
         } catch (NoSuchElementException e) {
@@ -67,7 +71,7 @@ public class CommentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id, Authentication authentication) {
         boolean isSuperuser = authentication.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERUSER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERUSER"));
         try {
             commentService.deleteComment(id, authentication.getName(), isSuperuser);
             return ResponseEntity.noContent().build();

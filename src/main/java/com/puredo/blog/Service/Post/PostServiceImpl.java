@@ -1,6 +1,8 @@
 package com.puredo.blog.Service.Post;
 
 import com.puredo.blog.DTO.PostDTO;
+import com.puredo.blog.Entity.Event;
+import com.puredo.blog.Entity.EventType;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.StubSubscription;
 import com.puredo.blog.Entity.User;
@@ -48,15 +50,15 @@ public class PostServiceImpl implements PostService {
         if (author.isEmpty()) return Optional.empty();
 
         List<Long> links = new ArrayList<>(request.getLinks() != null ? request.getLinks() : List.of());
-        String subject = request.getSubject() != null ? request.getSubject() : "Sem Assunto";
-        resolveWikilinksInto(links, request.getWikilinks(), author.get(), subject);
+        List<String> subjects = request.getSubjects() != null ? new ArrayList<>(request.getSubjects()) : new ArrayList<>();
+        resolveWikilinksInto(links, request.getWikilinks(), author.get(), subjects);
 
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setAuthor(author.get());
         post.setLinks(links);
-        post.setSubject(request.getSubject());
+        post.setSubjects(subjects);
 
         return Optional.of(postRepository.save(post));
     }
@@ -90,7 +92,9 @@ public class PostServiceImpl implements PostService {
 
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setSubject(request.getSubject());
+        if (request.getSubjects() != null) {
+            post.setSubjects(new ArrayList<>(request.getSubjects()));
+        }
         if (request.getContent() != null && !request.getContent().isBlank()) {
             post.setStub(false);
         }
@@ -101,7 +105,7 @@ public class PostServiceImpl implements PostService {
                 if (!mergedLinks.contains(id)) mergedLinks.add(id);
             }
         }
-        resolveWikilinksInto(mergedLinks, request.getWikilinks(), post.getAuthor(), post.getSubject());
+        resolveWikilinksInto(mergedLinks, request.getWikilinks(), post.getAuthor(), post.getSubjects());
         post.setLinks(mergedLinks);
 
         Post saved = postRepository.save(post);
@@ -129,9 +133,9 @@ public class PostServiceImpl implements PostService {
         if (followedIds.isEmpty()) return Page.empty(pageable);
 
         Pageable sorted = PageRequest.of(
-            pageable.getPageNumber(),
-            pageable.getPageSize(),
-            Sort.by("createdAt").descending()
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("createdAt").descending()
         );
         return postRepository.findFeedPosts(followedIds, sorted);
     }
@@ -139,9 +143,9 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Post> getExplore(String username, Pageable pageable) {
         Pageable sorted = PageRequest.of(
-            pageable.getPageNumber(),
-            pageable.getPageSize(),
-            Sort.by("createdAt").descending()
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("createdAt").descending()
         );
         return postRepository.findByAuthorUsernameNotAndStubFalse(username, sorted);
     }
@@ -149,9 +153,9 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<Post> getPostsByUser(String username, Pageable pageable) {
         Pageable sorted = PageRequest.of(
-            pageable.getPageNumber(),
-            pageable.getPageSize(),
-            Sort.by("createdAt").descending()
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("createdAt").descending()
         );
         return postRepository.findByAuthorUsernameAndStubFalse(username, sorted);
     }
@@ -173,6 +177,16 @@ public class PostServiceImpl implements PostService {
     @Override
     public Optional<Post> findPostByTitle(String title) {
         return postRepository.findPostByTitle(title);
+    }
+
+    @Override
+    public Page<Post> searchByTitle(String title, Pageable pageable) {
+        Pageable sorted = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("createdAt").descending()
+        );
+        return postRepository.findByTitleContainingIgnoreCaseAndStubFalse(title, sorted);
     }
 
     @Override
@@ -206,24 +220,32 @@ public class PostServiceImpl implements PostService {
         if (subscriptionRepository.existsByPostAndUser(post, user)) return true;
 
         subscriptionRepository.save(new StubSubscription(post, user));
+
+        Event stubEvent = new Event();
+        stubEvent.setPostId(postId);
+        stubEvent.setEventType(EventType.STUB_SUBSCRIBE);
+        stubEvent.setSessionId("system");
+        stubEvent.setUsername(subscriberUsername);
+        eventRepository.save(stubEvent);
+
         return true;
     }
 
-    private void resolveWikilinksInto(List<Long> links, List<String> wikilinks, User author, String subject) {
+    private void resolveWikilinksInto(List<Long> links, List<String> wikilinks, User author, List<String> subjects) {
         if (wikilinks == null) return;
         for (String title : wikilinks) {
             Long resolvedId = postRepository.findPostByTitle(title)
-                .map(Post::getId)
-                .orElseGet(() -> {
-                    Post stub = new Post();
-                    stub.setTitle(title);
-                    stub.setContent("");
-                    stub.setAuthor(author);
-                    stub.setSubject(subject);
-                    stub.setLinks(new ArrayList<>());
-                    stub.setStub(true);
-                    return postRepository.save(stub).getId();
-                });
+                    .map(Post::getId)
+                    .orElseGet(() -> {
+                        Post stub = new Post();
+                        stub.setTitle(title);
+                        stub.setContent("");
+                        stub.setAuthor(author);
+                        stub.setSubjects(new ArrayList<>(subjects));
+                        stub.setLinks(new ArrayList<>());
+                        stub.setStub(true);
+                        return postRepository.save(stub).getId();
+                    });
             if (!links.contains(resolvedId)) links.add(resolvedId);
         }
     }
