@@ -41,12 +41,19 @@ public enum PostDTO {;
 
         @Data
         @Value
+        public static class WikilinkRequest {
+            String title;
+            List<String> subjects;
+        }
+
+        @Data
+        @Value
         public static class Create implements Title, Content, Subjects {
             String title;
             String content;
             String authorUsername;
             List<Long> links;
-            List<String> wikilinks;
+            List<WikilinkRequest> wikilinks;
             List<String> subjects;
         }
 
@@ -57,7 +64,7 @@ public enum PostDTO {;
             String title;
             String content;
             List<Long> links;
-            List<String> wikilinks;
+            List<WikilinkRequest> wikilinks;
             List<String> subjects;
         }
     }

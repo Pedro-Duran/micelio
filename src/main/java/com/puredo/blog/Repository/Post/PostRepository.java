@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +35,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByAuthorUsernameNotAndStubFalse(String username, Pageable pageable);
 
     Page<Post> findByAuthorUsernameAndStubFalse(String username, Pageable pageable);
+
+    int countByIdInAndStubTrue(Collection<Long> ids);
 
     @Query("SELECT p FROM Post p WHERE p.author.id IN :authorIds AND p.stub = false")
     Page<Post> findFeedPosts(@Param("authorIds") List<Long> authorIds, Pageable pageable);

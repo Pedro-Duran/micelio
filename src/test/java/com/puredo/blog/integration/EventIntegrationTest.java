@@ -44,7 +44,7 @@ class EventIntegrationTest {
     @Sql("/sql/posts-insert.sql")
     void registerEvent_allEventTypes_returns200WithSavedEvent(EventType eventType) throws Exception {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, eventType, "session-test", null, null, null, null, null);
+                1L, eventType, "session-test", null, null, null, null, null, null);
 
         mockMvc.perform(post("/api/events/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -60,7 +60,7 @@ class EventIntegrationTest {
     @Sql("/sql/posts-insert.sql")
     void registerEvent_withOptionalFields_persistsAllData() throws Exception {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, EventType.VIEW, "session-abc", 90L, "twitter", "referrer.com", null, null);
+                1L, EventType.VIEW, "session-abc", 90L, "twitter", "referrer.com", null, null, null);
 
         mockMvc.perform(post("/api/events/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +75,7 @@ class EventIntegrationTest {
     @Sql("/sql/posts-insert.sql")
     void registerEvent_subjectClick_persistsSubjectAndCoverImageUrl() throws Exception {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, EventType.SUBJECT_CLICK, "session-x", null, null, null, "Tech", "https://s3/cover.jpg");
+                1L, EventType.SUBJECT_CLICK, "session-x", null, null, null, "Tech", "https://s3/cover.jpg", null);
 
         mockMvc.perform(post("/api/events/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,6 +84,21 @@ class EventIntegrationTest {
                 .andExpect(jsonPath("$.eventType").value("SUBJECT_CLICK"))
                 .andExpect(jsonPath("$.subject").value("Tech"))
                 .andExpect(jsonPath("$.coverImageUrl").value("https://s3/cover.jpg"));
+    }
+
+    @Test
+    @Sql("/sql/posts-insert.sql")
+    void registerEvent_share_persistsUsername() throws Exception {
+        EventDTO.Request.Register request = new EventDTO.Request.Register(
+                1L, EventType.SHARE, "session-s", null, "whatsapp", null, null, null, "alice");
+
+        mockMvc.perform(post("/api/events/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventType").value("SHARE"))
+                .andExpect(jsonPath("$.username").value("alice"))
+                .andExpect(jsonPath("$.utmSource").value("whatsapp"));
     }
 
     // ---- GET /api/events/byPost ----
@@ -116,7 +131,8 @@ class EventIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[*].postId", hasItems(1, 2)))
                 .andExpect(jsonPath("$[0].commentCount").isNumber())
-                .andExpect(jsonPath("$[0].likeCount").isNumber());
+                .andExpect(jsonPath("$[0].likeCount").isNumber())
+                .andExpect(jsonPath("$[0].shareCount").isNumber());
     }
 
     @Test
@@ -171,13 +187,12 @@ class EventIntegrationTest {
                 .andExpect(jsonPath("$.topSubscribers", not(empty())))
                 // bob subscreveu 2x (post 1 e 2)
                 .andExpect(jsonPath("$.topSubscribers[0].username").value("bob"))
-                .andExpect(jsonPath("$.topSubscribers[0].totalSubscriptions").value(2))
+                .andExpect(jsonPath("$.topSubscribers[0].count").value(2))
                 .andExpect(jsonPath("$.topAuthors").isArray())
                 .andExpect(jsonPath("$.topAuthors", not(empty())))
                 // alice é autora dos 2 posts com 3 inscrições total
-                .andExpect(jsonPath("$.topAuthors[0].username").value("alice"))
-                .andExpect(jsonPath("$.topAuthors[0].subscriptionCount").value(3))
-                .andExpect(jsonPath("$.topAuthors[0].postCount").value(2));
+                .andExpect(jsonPath("$.topAuthors[0].authorUsername").value("alice"))
+                .andExpect(jsonPath("$.topAuthors[0].subscriptionCount").value(3));
     }
 
     @Test
@@ -192,23 +207,55 @@ class EventIntegrationTest {
     // ---- GET /api/events/coverConversion ----
 
     @Test
-    @Sql("/sql/subject-click-events-insert.sql")
+    @Sql("/sql/cover-click-events-insert.sql")
     void getCoverConversionAnalytics_returnsAggregatedDataOrderedByClicks() throws Exception {
         mockMvc.perform(get("/api/events/coverConversion"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                // cover1.jpg tem 2 cliques, cover2.jpg tem 1 — ordenado desc
+                // post 1 tem 2 cliques, post 2 tem 1 — ordenado desc
+                .andExpect(jsonPath("$[0].postId").value(1))
                 .andExpect(jsonPath("$[0].coverImageUrl").value("https://s3/cover1.jpg"))
-                .andExpect(jsonPath("$[0].clicks").value(2))
+                .andExpect(jsonPath("$[0].clickCount").value(2))
+                .andExpect(jsonPath("$[0].viewCount").value(3))
                 .andExpect(jsonPath("$[0].subject").value("Tech"))
-                .andExpect(jsonPath("$[1].coverImageUrl").value("https://s3/cover2.jpg"))
-                .andExpect(jsonPath("$[1].clicks").value(1));
+                .andExpect(jsonPath("$[1].postId").value(2))
+                .andExpect(jsonPath("$[1].clickCount").value(1))
+                .andExpect(jsonPath("$[1].viewCount").value(1));
     }
 
     @Test
     @Sql("/sql/posts-insert.sql")
-    void getCoverConversionAnalytics_noSubjectClickEvents_returnsEmptyList() throws Exception {
+    void getCoverConversionAnalytics_noCoverClickEvents_returnsEmptyList() throws Exception {
         mockMvc.perform(get("/api/events/coverConversion"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", empty()));
+    }
+
+    // ---- GET /api/events/shareLeaderboard ----
+
+    @Test
+    @Sql("/sql/share-events-insert.sql")
+    void getShareLeaderboard_noSubjectFilter_returnsAllUsers() throws Exception {
+        mockMvc.perform(get("/api/events/shareLeaderboard"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", not(empty())))
+                .andExpect(jsonPath("$[0].username").value("pedro"))
+                .andExpect(jsonPath("$[0].shareCount").value(3));
+    }
+
+    @Test
+    @Sql("/sql/share-events-insert.sql")
+    void getShareLeaderboard_withSubjectFilter_returnsFilteredUsers() throws Exception {
+        mockMvc.perform(get("/api/events/shareLeaderboard").param("subject", "Tech"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].username").value("pedro"))
+                .andExpect(jsonPath("$[0].shareCount").value(2));
+    }
+
+    @Test
+    @Sql("/sql/posts-insert.sql")
+    void getShareLeaderboard_noShares_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/events/shareLeaderboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", empty()));
     }

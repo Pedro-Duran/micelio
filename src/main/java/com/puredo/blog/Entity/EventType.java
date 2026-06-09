@@ -5,5 +5,7 @@ public enum EventType {
     CLICK_NODE,
     SUBJECT_CLICK,
     STUB_SUBSCRIBE,
-    COMMENT
+    COMMENT,
+    SHARE,
+    COVER_CLICK
 }

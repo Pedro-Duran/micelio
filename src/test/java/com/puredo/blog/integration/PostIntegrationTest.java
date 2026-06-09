@@ -75,7 +75,9 @@ class PostIntegrationTest {
     @Sql("/sql/users-insert.sql")
     void createPost_withWikilink_createsStubForUnknownTitle() throws Exception {
         PostDTO.Request.Create request = new PostDTO.Request.Create(
-                "Main Post", "Content", "alice", null, List.of("Unknown Topic"), List.of("Tech"));
+                "Main Post", "Content", "alice", null,
+                List.of(new PostDTO.Request.WikilinkRequest("Unknown Topic", List.of())),
+                List.of("Tech"));
 
         mockMvc.perform(post("/api/posts/createPost")
                         .contentType(MediaType.APPLICATION_JSON)

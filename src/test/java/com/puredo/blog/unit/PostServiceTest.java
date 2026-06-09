@@ -96,7 +96,9 @@ class PostServiceTest {
     @Test
     void createPost_withNewWikilink_createsStubAndLinksIt() {
         PostDTO.Request.Create request = new PostDTO.Request.Create(
-                "Main", "Content", "alice", null, List.of("New Topic"), List.of("Tech"));
+                "Main", "Content", "alice", null,
+                List.of(new PostDTO.Request.WikilinkRequest("New Topic", List.of())),
+                List.of("Tech"));
         Post stubPost = new Post();
         stubPost.setStub(true);
         stubPost.setLinks(new ArrayList<>());
@@ -122,7 +124,9 @@ class PostServiceTest {
         existingWiki.setTitle("Existing");
 
         PostDTO.Request.Create request = new PostDTO.Request.Create(
-                "Main", "Content", "alice", null, List.of("Existing"), List.of("Tech"));
+                "Main", "Content", "alice", null,
+                List.of(new PostDTO.Request.WikilinkRequest("Existing", List.of())),
+                List.of("Tech"));
 
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
         when(postRepository.findPostByTitle("Existing")).thenReturn(Optional.of(existingWiki));

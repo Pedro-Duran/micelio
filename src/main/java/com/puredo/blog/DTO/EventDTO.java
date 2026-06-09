@@ -22,6 +22,7 @@ public enum EventDTO {;
             String referredBy;
             String subject;
             String coverImageUrl;
+            String username;
         }
     }
 
@@ -51,6 +52,7 @@ public enum EventDTO {;
             long nodeClickCount;
             long commentCount;
             long likeCount;
+            long shareCount;
         }
 
         @Value
@@ -69,21 +71,29 @@ public enum EventDTO {;
         @Value
         public static class TopSubscriber {
             String username;
-            long totalSubscriptions;
+            long count;
         }
 
         @Value
         public static class TopAuthor {
-            String username;
+            String authorUsername;
             long subscriptionCount;
-            long postCount;
         }
 
         @Value
         public static class CoverConversionEntry {
-            String coverImageUrl;
-            long clicks;
+            Long postId;
+            String postTitle;
             String subject;
+            String coverImageUrl;
+            long clickCount;
+            long viewCount;
+        }
+
+        @Value
+        public static class ShareLeaderboardEntry {
+            String username;
+            long shareCount;
         }
     }
 }

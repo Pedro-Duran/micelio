@@ -52,4 +52,10 @@ public class EventController {
     public ResponseEntity<List<EventDTO.Response.CoverConversionEntry>> getCoverConversionAnalytics() {
         return ResponseEntity.ok(eventService.getCoverConversionAnalytics());
     }
+
+    @GetMapping("/shareLeaderboard")
+    public ResponseEntity<List<EventDTO.Response.ShareLeaderboardEntry>> getShareLeaderboard(
+            @RequestParam(required = false) String subject) {
+        return ResponseEntity.ok(eventService.getShareLeaderboard(subject));
+    }
 }

@@ -231,21 +231,41 @@ public class PostServiceImpl implements PostService {
         return true;
     }
 
-    private void resolveWikilinksInto(List<Long> links, List<String> wikilinks, User author, List<String> subjects) {
+    private static final int MAX_STUBS_PER_POST = 10;
+
+    private void resolveWikilinksInto(List<Long> links, List<PostDTO.Request.WikilinkRequest> wikilinks,
+                                       User author, List<String> parentSubjects) {
         if (wikilinks == null) return;
-        for (String title : wikilinks) {
-            Long resolvedId = postRepository.findPostByTitle(title)
-                    .map(Post::getId)
-                    .orElseGet(() -> {
-                        Post stub = new Post();
-                        stub.setTitle(title);
-                        stub.setContent("");
-                        stub.setAuthor(author);
-                        stub.setSubjects(new ArrayList<>(subjects));
-                        stub.setLinks(new ArrayList<>());
-                        stub.setStub(true);
-                        return postRepository.save(stub).getId();
-                    });
+
+        int stubCount = links.isEmpty() ? 0 : postRepository.countByIdInAndStubTrue(links);
+
+        for (PostDTO.Request.WikilinkRequest wikilink : wikilinks) {
+            Optional<Post> found = postRepository.findPostByTitle(wikilink.getTitle());
+
+            Long resolvedId;
+            if (found.isPresent()) {
+                Post existing = found.get();
+                if (existing.isStub() && !links.contains(existing.getId())) {
+                    if (stubCount >= MAX_STUBS_PER_POST) continue;
+                    stubCount++;
+                }
+                resolvedId = existing.getId();
+            } else {
+                if (stubCount >= MAX_STUBS_PER_POST) continue;
+                List<String> stubSubjects = (wikilink.getSubjects() != null && !wikilink.getSubjects().isEmpty())
+                        ? new ArrayList<>(wikilink.getSubjects())
+                        : new ArrayList<>(parentSubjects);
+                Post stub = new Post();
+                stub.setTitle(wikilink.getTitle());
+                stub.setContent("");
+                stub.setAuthor(author);
+                stub.setSubjects(stubSubjects);
+                stub.setLinks(new ArrayList<>());
+                stub.setStub(true);
+                resolvedId = postRepository.save(stub).getId();
+                stubCount++;
+            }
+
             if (!links.contains(resolvedId)) links.add(resolvedId);
         }
     }

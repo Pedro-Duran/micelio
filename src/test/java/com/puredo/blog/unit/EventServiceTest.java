@@ -60,7 +60,7 @@ class EventServiceTest {
     @EnumSource(EventType.class)
     void registerEvent_allEventTypes_savesAndReturnsDTO(EventType eventType) {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, eventType, "session-abc", null, null, null, null, null);
+                1L, eventType, "session-abc", null, null, null, null, null, null);
         event.setEventType(eventType);
         when(eventRepository.save(any())).thenReturn(event);
 
@@ -74,7 +74,7 @@ class EventServiceTest {
     @Test
     void registerEvent_withOptionalFields_mapsAllFieldsCorrectly() {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, EventType.VIEW, "session-1", 120L, "twitter", "referrer.com", null, null);
+                1L, EventType.VIEW, "session-1", 120L, "twitter", "referrer.com", null, null, null);
         event.setDuration(120L);
         event.setUtmSource("twitter");
         event.setReferredBy("referrer.com");
@@ -90,7 +90,7 @@ class EventServiceTest {
     @Test
     void registerEvent_subjectClick_mapsSubjectAndCoverImageUrl() {
         EventDTO.Request.Register request = new EventDTO.Request.Register(
-                1L, EventType.SUBJECT_CLICK, "session-1", null, null, null, "Tech", "https://s3/cover.jpg");
+                1L, EventType.SUBJECT_CLICK, "session-1", null, null, null, "Tech", "https://s3/cover.jpg", null);
         event.setEventType(EventType.SUBJECT_CLICK);
         event.setSubject("Tech");
         event.setCoverImageUrl("https://s3/cover.jpg");
@@ -100,6 +100,21 @@ class EventServiceTest {
 
         assertThat(result.getSubject()).isEqualTo("Tech");
         assertThat(result.getCoverImageUrl()).isEqualTo("https://s3/cover.jpg");
+    }
+
+    @Test
+    void registerEvent_share_persistsUsername() {
+        EventDTO.Request.Register request = new EventDTO.Request.Register(
+                1L, EventType.SHARE, "session-1", null, "whatsapp", null, null, null, "pedro");
+        event.setEventType(EventType.SHARE);
+        event.setUtmSource("whatsapp");
+        event.setUsername("pedro");
+        when(eventRepository.save(any())).thenReturn(event);
+
+        EventDTO.Response.EventSaved result = eventService.registerEvent(request);
+
+        assertThat(result.getUsername()).isEqualTo("pedro");
+        assertThat(result.getUtmSource()).isEqualTo("whatsapp");
     }
 
     // ---- registerInternalEvent ----
@@ -157,6 +172,8 @@ class EventServiceTest {
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 2L}));
         when(eventRepository.countByPostAndType(EventType.COMMENT))
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 4L}));
+        when(eventRepository.countByPostAndType(EventType.SHARE))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, 1L}));
         when(eventRepository.avgDurationByPostAndType(EventType.VIEW))
                 .thenReturn(List.<Object[]>of(new Object[]{1L, 150.0}));
         when(likeRepository.countByPostIds(anyList()))
@@ -174,6 +191,7 @@ class EventServiceTest {
         assertThat(s1.getAvgDuration()).isEqualTo(150.0);
         assertThat(s1.getCommentCount()).isEqualTo(4L);
         assertThat(s1.getLikeCount()).isEqualTo(5L);
+        assertThat(s1.getShareCount()).isEqualTo(1L);
     }
 
     @Test
@@ -183,6 +201,8 @@ class EventServiceTest {
         when(eventRepository.countByPostAndType(EventType.CLICK_NODE))
                 .thenReturn(List.<Object[]>of());
         when(eventRepository.countByPostAndType(EventType.COMMENT))
+                .thenReturn(List.<Object[]>of());
+        when(eventRepository.countByPostAndType(EventType.SHARE))
                 .thenReturn(List.<Object[]>of());
         when(eventRepository.avgDurationByPostAndType(EventType.VIEW))
                 .thenReturn(List.<Object[]>of());
@@ -197,6 +217,7 @@ class EventServiceTest {
         assertThat(result.get(0).getPostId()).isEqualTo(1L);
         assertThat(result.get(0).getLikeCount()).isEqualTo(0L);
         assertThat(result.get(0).getCommentCount()).isEqualTo(0L);
+        assertThat(result.get(0).getShareCount()).isEqualTo(0L);
     }
 
     @Test
@@ -206,6 +227,8 @@ class EventServiceTest {
         when(eventRepository.countByPostAndType(EventType.CLICK_NODE))
                 .thenReturn(List.<Object[]>of());
         when(eventRepository.countByPostAndType(EventType.COMMENT))
+                .thenReturn(List.<Object[]>of());
+        when(eventRepository.countByPostAndType(EventType.SHARE))
                 .thenReturn(List.<Object[]>of());
         when(eventRepository.avgDurationByPostAndType(EventType.VIEW))
                 .thenReturn(List.<Object[]>of());
@@ -271,18 +294,17 @@ class EventServiceTest {
                         new Object[]{"bob", 5L},
                         new Object[]{"carol", 2L}));
         when(eventRepository.topStubSubscribeAuthors())
-                .thenReturn(List.<Object[]>of(new Object[]{"alice", 7L, 3L}));
+                .thenReturn(List.<Object[]>of(new Object[]{"alice", 7L}));
 
         EventDTO.Response.SubscriptionAnalytics result = eventService.getSubscriptionAnalytics();
 
         assertThat(result.getTopSubscribers()).hasSize(2);
         assertThat(result.getTopSubscribers().get(0).getUsername()).isEqualTo("bob");
-        assertThat(result.getTopSubscribers().get(0).getTotalSubscriptions()).isEqualTo(5L);
+        assertThat(result.getTopSubscribers().get(0).getCount()).isEqualTo(5L);
 
         assertThat(result.getTopAuthors()).hasSize(1);
-        assertThat(result.getTopAuthors().get(0).getUsername()).isEqualTo("alice");
+        assertThat(result.getTopAuthors().get(0).getAuthorUsername()).isEqualTo("alice");
         assertThat(result.getTopAuthors().get(0).getSubscriptionCount()).isEqualTo(7L);
-        assertThat(result.getTopAuthors().get(0).getPostCount()).isEqualTo(3L);
     }
 
     @Test
@@ -300,25 +322,65 @@ class EventServiceTest {
 
     @Test
     void getCoverConversionAnalytics_returnsMappedResult() {
+        when(eventRepository.countByPostAndType(EventType.VIEW))
+                .thenReturn(List.<Object[]>of(new Object[]{1L, 30L}, new Object[]{2L, 10L}));
         when(eventRepository.coverConversionStats())
                 .thenReturn(List.<Object[]>of(
-                        new Object[]{"https://s3/cover1.jpg", 10L, "Tech"},
-                        new Object[]{"https://s3/cover2.jpg", 5L, "Life"}));
+                        new Object[]{1L, "Post 1", "https://s3/cover1.jpg", "Tech", 10L},
+                        new Object[]{2L, "Post 2", "https://s3/cover2.jpg", "Life", 5L}));
 
         List<EventDTO.Response.CoverConversionEntry> result = eventService.getCoverConversionAnalytics();
 
         assertThat(result).hasSize(2);
+        assertThat(result.get(0).getPostId()).isEqualTo(1L);
+        assertThat(result.get(0).getPostTitle()).isEqualTo("Post 1");
         assertThat(result.get(0).getCoverImageUrl()).isEqualTo("https://s3/cover1.jpg");
-        assertThat(result.get(0).getClicks()).isEqualTo(10L);
         assertThat(result.get(0).getSubject()).isEqualTo("Tech");
-        assertThat(result.get(1).getCoverImageUrl()).isEqualTo("https://s3/cover2.jpg");
-        assertThat(result.get(1).getClicks()).isEqualTo(5L);
+        assertThat(result.get(0).getClickCount()).isEqualTo(10L);
+        assertThat(result.get(0).getViewCount()).isEqualTo(30L);
+        assertThat(result.get(1).getClickCount()).isEqualTo(5L);
+        assertThat(result.get(1).getViewCount()).isEqualTo(10L);
     }
 
     @Test
     void getCoverConversionAnalytics_noData_returnsEmptyList() {
+        when(eventRepository.countByPostAndType(EventType.VIEW)).thenReturn(List.<Object[]>of());
         when(eventRepository.coverConversionStats()).thenReturn(List.<Object[]>of());
 
         assertThat(eventService.getCoverConversionAnalytics()).isEmpty();
+    }
+
+    // ---- getShareLeaderboard ----
+
+    @Test
+    void getShareLeaderboard_noSubject_returnsAllUsers() {
+        when(eventRepository.countSharesByUser())
+                .thenReturn(List.<Object[]>of(
+                        new Object[]{"pedro", 17L},
+                        new Object[]{"alice", 5L}));
+
+        List<EventDTO.Response.ShareLeaderboardEntry> result = eventService.getShareLeaderboard(null);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getUsername()).isEqualTo("pedro");
+        assertThat(result.get(0).getShareCount()).isEqualTo(17L);
+    }
+
+    @Test
+    void getShareLeaderboard_withSubject_filtersResults() {
+        when(eventRepository.countSharesByUserAndSubject("ML"))
+                .thenReturn(List.<Object[]>of(new Object[]{"pedro", 8L}));
+
+        List<EventDTO.Response.ShareLeaderboardEntry> result = eventService.getShareLeaderboard("ML");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getShareCount()).isEqualTo(8L);
+    }
+
+    @Test
+    void getShareLeaderboard_noShares_returnsEmptyList() {
+        when(eventRepository.countSharesByUser()).thenReturn(List.<Object[]>of());
+
+        assertThat(eventService.getShareLeaderboard(null)).isEmpty();
     }
 }

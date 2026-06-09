@@ -13,4 +13,5 @@ public interface EventService {
     List<EventDTO.Response.ReferrerSummary> getReferrerSummary();
     EventDTO.Response.SubscriptionAnalytics getSubscriptionAnalytics();
     List<EventDTO.Response.CoverConversionEntry> getCoverConversionAnalytics();
+    List<EventDTO.Response.ShareLeaderboardEntry> getShareLeaderboard(String subject);
 }

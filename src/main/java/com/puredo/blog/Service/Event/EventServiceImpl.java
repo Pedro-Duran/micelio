@@ -38,6 +38,7 @@ public class EventServiceImpl implements EventService {
         event.setReferredBy(request.getReferredBy());
         event.setSubject(request.getSubject());
         event.setCoverImageUrl(request.getCoverImageUrl());
+        event.setUsername(request.getUsername());
 
         Event saved = eventRepository.save(event);
         return toEventSaved(saved);
@@ -65,6 +66,7 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> viewCounts = toMap(eventRepository.countByPostAndType(EventType.VIEW));
         Map<Long, Long> clickCounts = toMap(eventRepository.countByPostAndType(EventType.CLICK_NODE));
         Map<Long, Long> commentCounts = toMap(eventRepository.countByPostAndType(EventType.COMMENT));
+        Map<Long, Long> shareCounts = toMap(eventRepository.countByPostAndType(EventType.SHARE));
         Map<Long, Double> avgDurations = toDoubleMap(eventRepository.avgDurationByPostAndType(EventType.VIEW));
 
         Set<Long> postIds = new HashSet<>();
@@ -94,7 +96,8 @@ public class EventServiceImpl implements EventService {
                     avgDurations.getOrDefault(postId, 0.0),
                     clickCounts.getOrDefault(postId, 0L),
                     commentCounts.getOrDefault(postId, 0L),
-                    likeCounts.getOrDefault(postId, 0L)
+                    likeCounts.getOrDefault(postId, 0L),
+                    shareCounts.getOrDefault(postId, 0L)
             ));
         }
 
@@ -139,8 +142,7 @@ public class EventServiceImpl implements EventService {
         List<EventDTO.Response.TopAuthor> authors = eventRepository.topStubSubscribeAuthors().stream()
                 .map(r -> new EventDTO.Response.TopAuthor(
                         (String) r[0],
-                        ((Number) r[1]).longValue(),
-                        ((Number) r[2]).longValue()))
+                        ((Number) r[1]).longValue()))
                 .toList();
 
         return new EventDTO.Response.SubscriptionAnalytics(subscribers, authors);
@@ -148,11 +150,27 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventDTO.Response.CoverConversionEntry> getCoverConversionAnalytics() {
+        Map<Long, Long> viewCounts = toMap(eventRepository.countByPostAndType(EventType.VIEW));
         return eventRepository.coverConversionStats().stream()
                 .map(r -> new EventDTO.Response.CoverConversionEntry(
+                        ((Number) r[0]).longValue(),
+                        (String) r[1],
+                        (String) r[3],
+                        (String) r[2],
+                        ((Number) r[4]).longValue(),
+                        viewCounts.getOrDefault(((Number) r[0]).longValue(), 0L)))
+                .toList();
+    }
+
+    @Override
+    public List<EventDTO.Response.ShareLeaderboardEntry> getShareLeaderboard(String subject) {
+        List<Object[]> rows = subject != null
+                ? eventRepository.countSharesByUserAndSubject(subject)
+                : eventRepository.countSharesByUser();
+        return rows.stream()
+                .map(r -> new EventDTO.Response.ShareLeaderboardEntry(
                         (String) r[0],
-                        ((Number) r[1]).longValue(),
-                        (String) r[2]))
+                        ((Number) r[1]).longValue()))
                 .toList();
     }
 

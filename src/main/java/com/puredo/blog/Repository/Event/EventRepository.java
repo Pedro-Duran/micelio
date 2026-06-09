@@ -39,7 +39,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Object[]> topStubSubscribers();
 
     @Query(value = """
-            SELECT u.username, COUNT(e.id) AS sub_count, COUNT(DISTINCT e.post_id) AS post_count
+            SELECT u.username, COUNT(e.id) AS sub_count
             FROM events e
             JOIN posts p ON e.post_id = p.id
             JOIN users u ON p.author_id = u.id
@@ -51,11 +51,31 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Object[]> topStubSubscribeAuthors();
 
     @Query(value = """
-            SELECT e.cover_image_url, COUNT(*) AS clicks, MAX(e.subject) AS subject
+            SELECT e.post_id, p.title, MAX(e.cover_image_url) AS cover_image_url,
+                   MAX(e.subject) AS subject, COUNT(e.id) AS click_count
             FROM events e
-            WHERE e.event_type = 'SUBJECT_CLICK' AND e.cover_image_url IS NOT NULL
-            GROUP BY e.cover_image_url
-            ORDER BY clicks DESC
+            JOIN posts p ON e.post_id = p.id
+            WHERE e.event_type = 'COVER_CLICK'
+            GROUP BY e.post_id, p.title
+            ORDER BY click_count DESC
             """, nativeQuery = true)
     List<Object[]> coverConversionStats();
+
+    @Query(value = """
+            SELECT e.username, COUNT(*) AS share_count
+            FROM events e
+            WHERE e.event_type = 'SHARE' AND e.username IS NOT NULL
+            GROUP BY e.username
+            ORDER BY share_count DESC
+            """, nativeQuery = true)
+    List<Object[]> countSharesByUser();
+
+    @Query(value = """
+            SELECT e.username, COUNT(*) AS share_count
+            FROM events e
+            WHERE e.event_type = 'SHARE' AND e.username IS NOT NULL AND e.subject = :subject
+            GROUP BY e.username
+            ORDER BY share_count DESC
+            """, nativeQuery = true)
+    List<Object[]> countSharesByUserAndSubject(@Param("subject") String subject);
 }
