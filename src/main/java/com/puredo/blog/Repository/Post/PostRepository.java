@@ -30,6 +30,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p JOIN p.links l WHERE l = :linkedPostId")
     List<Post> findPostsByLinkId(@Param("linkedPostId") Long linkedPostId);
 
+    @Query("SELECT COUNT(p) FROM Post p JOIN p.subjects s WHERE s = :subject AND p.author.username != :username")
+    long countBySubjectAndOtherAuthors(@Param("subject") String subject, @Param("username") String username);
+
+    @Query("SELECT p FROM Post p JOIN p.subjects s WHERE s = :subject")
+    List<Post> findAllBySubject(@Param("subject") String subject);
+
+    @Query("SELECT p FROM Post p JOIN p.subjects s WHERE s = :subject AND p.author.username = :username")
+    List<Post> findBySubjectAndAuthorUsername(@Param("subject") String subject, @Param("username") String username);
+
     Page<Post> findByTitleContainingIgnoreCaseAndStubFalse(String title, Pageable pageable);
 
     Page<Post> findByAuthorUsernameNotAndStubFalse(String username, Pageable pageable);

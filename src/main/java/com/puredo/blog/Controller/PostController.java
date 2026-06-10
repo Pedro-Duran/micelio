@@ -199,6 +199,27 @@ public class PostController {
         return postService.findPostsBySubject(subject);
     }
 
+    @PutMapping("/subjects/{subject}")
+    public ResponseEntity<Void> renameSubject(
+            @PathVariable String subject,
+            @RequestBody PostDTO.Request.RenameSubject request,
+            Authentication authentication) {
+        PostService.SubjectResult result = postService.renameSubject(subject, request.getNewName(), authentication.getName());
+        return result == PostService.SubjectResult.OK
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    @DeleteMapping("/subjects/{subject}")
+    public ResponseEntity<Void> deleteSubject(
+            @PathVariable String subject,
+            Authentication authentication) {
+        PostService.SubjectResult result = postService.deleteSubject(subject, authentication.getName());
+        return result == PostService.SubjectResult.OK
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
     // ---- helpers ----
 
     private ResponseEntity<Page<PostDTO.Response.Post>> pageResponse(Page<Post> posts, Authentication auth) {

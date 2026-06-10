@@ -231,6 +231,47 @@ public class PostServiceImpl implements PostService {
         return true;
     }
 
+    @Override
+    @Transactional
+    public SubjectResult renameSubject(String oldName, String newName, String requesterUsername) {
+        if (postRepository.countBySubjectAndOtherAuthors(oldName, requesterUsername) > 0) {
+            return SubjectResult.FORBIDDEN;
+        }
+        List<Post> posts = postRepository.findAllBySubject(oldName);
+        for (Post post : posts) {
+            List<String> subjects = post.getSubjects();
+            int idx = subjects.indexOf(oldName);
+            if (idx >= 0) subjects.set(idx, newName);
+        }
+        postRepository.saveAll(posts);
+        return SubjectResult.OK;
+    }
+
+    @Override
+    @Transactional
+    public SubjectResult deleteSubject(String subject, String requesterUsername) {
+        if (postRepository.countBySubjectAndOtherAuthors(subject, requesterUsername) > 0) {
+            return SubjectResult.FORBIDDEN;
+        }
+        List<Post> userPosts = postRepository.findBySubjectAndAuthorUsername(subject, requesterUsername);
+        List<Post> toUpdate = new ArrayList<>();
+        List<Long> toDelete = new ArrayList<>();
+
+        for (Post post : userPosts) {
+            post.getSubjects().remove(subject);
+            if (post.getSubjects().isEmpty()) {
+                toDelete.add(post.getId());
+            } else {
+                toUpdate.add(post);
+            }
+        }
+        postRepository.saveAll(toUpdate);
+        for (Long id : toDelete) {
+            deletePostById(id);
+        }
+        return SubjectResult.OK;
+    }
+
     private static final int MAX_STUBS_PER_POST = 10;
 
     private void resolveWikilinksInto(List<Long> links, List<PostDTO.Request.WikilinkRequest> wikilinks,

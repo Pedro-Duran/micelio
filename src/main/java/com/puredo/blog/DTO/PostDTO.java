@@ -59,6 +59,12 @@ public enum PostDTO {;
 
         @Data
         @Value
+        public static class RenameSubject {
+            String newName;
+        }
+
+        @Data
+        @Value
         public static class Update implements Id, Title, Content, Links, Subjects {
             Long id;
             String title;
