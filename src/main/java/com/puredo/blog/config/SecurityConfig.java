@@ -64,7 +64,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint((req, res, ex) -> {
+                    res.setStatus(401);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                })
+            );
 
         if (clientRegistrationRepository != null) {
             http.oauth2Login(oauth2 -> oauth2
