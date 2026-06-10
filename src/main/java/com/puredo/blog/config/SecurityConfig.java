@@ -7,6 +7,7 @@ import com.puredo.blog.security.OAuth2UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,19 +39,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
+            .securityMatcher("/api/**", "/health")
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET,  "/health").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/posts/feed").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/posts/explore").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/posts/mine").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/users/{username}/isFollowing").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/users/**").permitAll()
-                .requestMatchers(HttpMethod.GET,  "/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/createUser").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/events/**").permitAll()
@@ -60,7 +63,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/posts/subjects/**").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/comments/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/comments/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated()
+                .requestMatchers(HttpMethod.PUT,  "/api/comments/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()
                 .anyRequest().authenticated()
             )
@@ -72,6 +75,17 @@ public class SecurityConfig {
                     res.getWriter().write("{\"error\":\"Unauthorized\"}");
                 })
             );
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain oauthFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
 
         if (clientRegistrationRepository != null) {
             http.oauth2Login(oauth2 -> oauth2
