@@ -26,6 +26,7 @@ public interface PostService {
     List<String> getDistinctSubjects();
     HashMap<Long, String> findPostsBySubject(String subject);
     boolean subscribeToStub(Long postId, String subscriberUsername);
+    boolean unsubscribeFromStub(Long postId, String username);
 
     enum SubjectResult { OK, FORBIDDEN }
     SubjectResult renameSubject(String oldName, String newName, String requesterUsername);

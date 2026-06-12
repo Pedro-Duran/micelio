@@ -233,6 +233,14 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    public boolean unsubscribeFromStub(Long postId, String username) {
+        if (!subscriptionRepository.existsByPostIdAndUserUsername(postId, username)) return false;
+        subscriptionRepository.deleteByPostIdAndUserUsername(postId, username);
+        return true;
+    }
+
+    @Override
+    @Transactional
     public SubjectResult renameSubject(String oldName, String newName, String requesterUsername) {
         if (postRepository.countBySubjectAndOtherAuthors(oldName, requesterUsername) > 0) {
             return SubjectResult.FORBIDDEN;

@@ -90,6 +90,8 @@ public enum PostDTO {;
             String coverImageUrl;
             long likeCount;
             boolean likedByMe;
+            long subscriberCount;
+            boolean subscribedByMe;
         }
 
         @Value

@@ -3,6 +3,7 @@ package com.puredo.blog.Controller;
 import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Post;
+import com.puredo.blog.Repository.StubSubscription.StubSubscriptionRepository;
 import com.puredo.blog.Service.Like.LikeService;
 import com.puredo.blog.Service.Post.PostService;
 import com.puredo.blog.Service.Storage.StorageService;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -28,12 +30,15 @@ public class PostController {
     private final PostService postService;
     private final StorageService storageService;
     private final LikeService likeService;
+    private final StubSubscriptionRepository subscriptionRepository;
 
     @Autowired
-    public PostController(PostService postService, StorageService storageService, LikeService likeService) {
+    public PostController(PostService postService, StorageService storageService, LikeService likeService,
+                          StubSubscriptionRepository subscriptionRepository) {
         this.postService = postService;
         this.storageService = storageService;
         this.likeService = likeService;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
     @PostMapping("/createPost")
@@ -44,7 +49,9 @@ public class PostController {
         return postService.createPost(request)
                 .map(p -> ResponseEntity.ok(toResponse(p,
                         likeService.countByPost(p.getId()),
-                        username != null && likeService.isLikedByUser(p.getId(), username))))
+                        username != null && likeService.isLikedByUser(p.getId(), username),
+                        subscriptionRepository.countByPostId(p.getId()),
+                        false)))
                 .orElse(ResponseEntity.badRequest().build());
     }
 
@@ -116,7 +123,9 @@ public class PostController {
         return postService.updatePost(request)
                 .map(p -> ResponseEntity.ok(toResponse(p,
                         likeService.countByPost(p.getId()),
-                        username != null && likeService.isLikedByUser(p.getId(), username))))
+                        username != null && likeService.isLikedByUser(p.getId(), username),
+                        subscriptionRepository.countByPostId(p.getId()),
+                        username != null && subscriptionRepository.existsByPostIdAndUserUsername(p.getId(), username))))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -153,6 +162,22 @@ public class PostController {
     public ResponseEntity<Void> subscribeToStub(@PathVariable Long postId, Authentication authentication) {
         boolean ok = postService.subscribeToStub(postId, authentication.getName());
         return ok ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+
+    @DeleteMapping("/{postId}/notify")
+    public ResponseEntity<Void> unsubscribeFromStub(@PathVariable Long postId, Authentication authentication) {
+        boolean ok = postService.unsubscribeFromStub(postId, authentication.getName());
+        return ok ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{postId}/notify")
+    public ResponseEntity<List<UserDTO.Response.UsuarioPublico>> getSubscribers(@PathVariable Long postId) {
+        if (postService.getPostByID(postId).isEmpty()) return ResponseEntity.notFound().build();
+        List<UserDTO.Response.UsuarioPublico> subscribers = subscriptionRepository.findSubscribersByPostId(postId)
+                .stream()
+                .map(u -> new UserDTO.Response.UsuarioPublico(u.getId(), u.getUsername(), null, u.getAvatarUrl()))
+                .toList();
+        return ResponseEntity.ok(subscribers);
     }
 
     @PostMapping("/{postId}/like")
@@ -226,11 +251,19 @@ public class PostController {
         String username = extractUsername(auth);
         Map<Long, Long> counts = likeService.countByPosts(ids);
         Set<Long> liked = username != null ? likeService.likedPostIds(ids, username) : Set.of();
+        Map<Long, Long> subscriberCounts = ids.isEmpty() ? Map.of() :
+                subscriptionRepository.countByPostIds(ids).stream()
+                        .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+        Set<Long> subscribed = (username != null && !ids.isEmpty())
+                ? Set.copyOf(subscriptionRepository.findSubscribedPostIds(ids, username))
+                : Set.of();
         return ResponseEntity.ok(posts.map(p ->
-                toResponse(p, counts.getOrDefault(p.getId(), 0L), liked.contains(p.getId()))));
+                toResponse(p, counts.getOrDefault(p.getId(), 0L), liked.contains(p.getId()),
+                        subscriberCounts.getOrDefault(p.getId(), 0L), subscribed.contains(p.getId()))));
     }
 
-    private PostDTO.Response.Post toResponse(Post post, long likeCount, boolean likedByMe) {
+    private PostDTO.Response.Post toResponse(Post post, long likeCount, boolean likedByMe,
+                                             long subscriberCount, boolean subscribedByMe) {
         UserDTO.Response.UsuarioPublico author = new UserDTO.Response.UsuarioPublico(
                 post.getAuthor().getId(), post.getAuthor().getUsername(), null, post.getAuthor().getAvatarUrl()
         );
@@ -245,7 +278,9 @@ public class PostController {
                 post.isStub(),
                 post.getCoverImageUrl(),
                 likeCount,
-                likedByMe
+                likedByMe,
+                subscriberCount,
+                subscribedByMe
         );
     }
 
