@@ -42,6 +42,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p JOIN p.subjects s WHERE s = :subject AND p.author.username = :username")
     List<Post> findBySubjectAndAuthorUsername(@Param("subject") String subject, @Param("username") String username);
 
+    @Query("SELECT DISTINCT s FROM Post p JOIN p.subjects s WHERE p.author.username = :username AND p.stub = false")
+    List<String> findDistinctSubjectsByAuthorUsername(@Param("username") String username);
+
     Page<Post> findByTitleContainingIgnoreCaseAndStubFalse(String title, Pageable pageable);
 
     Page<Post> findByAuthorUsernameNotAndStubFalse(String username, Pageable pageable);

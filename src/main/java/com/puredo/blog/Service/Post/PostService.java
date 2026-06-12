@@ -24,6 +24,7 @@ public interface PostService {
     Page<Post> searchByTitle(String title, Pageable pageable);
     Optional<Post> getPostByID(Long id);
     List<String> getDistinctSubjects();
+    List<String> getDistinctSubjectsByAuthor(String username);
     HashMap<Long, String> findPostsBySubject(String subject);
     boolean subscribeToStub(Long postId, String subscriberUsername);
     boolean unsubscribeFromStub(Long postId, String username);

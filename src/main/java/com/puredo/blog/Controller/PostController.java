@@ -218,6 +218,11 @@ public class PostController {
         return postService.getDistinctSubjects();
     }
 
+    @GetMapping("/subjects/mine")
+    public List<String> getMySubjects(Authentication authentication) {
+        return postService.getDistinctSubjectsByAuthor(authentication.getName());
+    }
+
     @GetMapping("/postsIdForThisSubject")
     public HashMap<Long, String> getPostsIdsForThisSubject(@RequestParam String subject) {
         return postService.findPostsBySubject(subject);

@@ -200,6 +200,11 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public List<String> getDistinctSubjectsByAuthor(String username) {
+        return postRepository.findDistinctSubjectsByAuthorUsername(username);
+    }
+
+    @Override
     public HashMap<Long, String> findPostsBySubject(String subject) {
         List<Object[]> results = postRepository.findPostIdsAndTitlesBySubject(subject);
         HashMap<Long, String> postMap = new HashMap<>();
