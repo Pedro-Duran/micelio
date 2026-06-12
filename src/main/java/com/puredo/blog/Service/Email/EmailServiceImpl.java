@@ -1,24 +1,26 @@
 package com.puredo.blog.Service.Email;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestClient restClient;
 
-    @Value("${spring.mail.username}")
-    private String from;
+    @Value("${brevo.from-email}")
+    private String fromEmail;
 
-    @Autowired
-    public EmailServiceImpl(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public EmailServiceImpl(@Value("${brevo.api-key}") String apiKey) {
+        this.restClient = RestClient.builder()
+                .baseUrl("https://api.brevo.com/v3")
+                .defaultHeader("api-key", apiKey)
+                .defaultHeader("Accept", "application/json")
+                .build();
     }
 
     @Override
@@ -61,16 +63,21 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendHtml(String to, String subject, String html) {
+        Map<String, Object> body = Map.of(
+                "sender", Map.of("name", "Micelio", "email", fromEmail),
+                "to", List.of(Map.of("email", to)),
+                "subject", subject,
+                "htmlContent", html
+        );
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
-            helper.setFrom(from);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Falha ao enviar email para " + to, e);
+            restClient.post()
+                    .uri("/smtp/email")
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao enviar email para " + to + ": " + e.getMessage(), e);
         }
     }
 }
