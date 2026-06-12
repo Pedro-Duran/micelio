@@ -16,4 +16,9 @@ public interface UserService {
     List<UserDTO.Response.UsuarioPublico> searchUsers(String username);
     Optional<User> getUserById(Long id);
     List<User> getAllUsers();
+
+    enum PinResult { OK, ALREADY_PINNED }
+    PinResult pinSubject(String username, String subjectName);
+    boolean unpinSubject(String username, String subjectName);
+    List<String> getPinnedSubjects(String username);
 }

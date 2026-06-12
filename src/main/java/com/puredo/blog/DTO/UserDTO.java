@@ -44,6 +44,12 @@ public enum UserDTO {;
             String email;
         }
 
+        @Data
+        @Value
+        public static class PinSubject {
+            String subjectName;
+        }
+
         @Value
         public static class Update implements Id, Username, Password {
             Long id;

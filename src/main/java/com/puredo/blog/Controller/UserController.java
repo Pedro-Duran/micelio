@@ -100,6 +100,28 @@ public class UserController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    // --- Pinned subjects ---
+
+    @PostMapping("/subjects/pin")
+    public ResponseEntity<Void> pinSubject(@RequestBody UserDTO.Request.PinSubject request,
+                                           Authentication authentication) {
+        UserService.PinResult result = userService.pinSubject(authentication.getName(), request.getSubjectName());
+        return result == UserService.PinResult.OK
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.status(HttpStatus.CONFLICT).build();
+    }
+
+    @DeleteMapping("/subjects/pin/{subjectName}")
+    public ResponseEntity<Void> unpinSubject(@PathVariable String subjectName, Authentication authentication) {
+        boolean removed = userService.unpinSubject(authentication.getName(), subjectName);
+        return removed ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/subjects/pinned")
+    public ResponseEntity<List<String>> getPinnedSubjects(Authentication authentication) {
+        return ResponseEntity.ok(userService.getPinnedSubjects(authentication.getName()));
+    }
+
     // --- Follow ---
 
     @PostMapping("/{username}/follow")

@@ -2,7 +2,9 @@ package com.puredo.blog.Service.User;
 
 import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.Entity.User;
+import com.puredo.blog.Entity.UserPinnedSubject;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Repository.UserPinnedSubject.UserPinnedSubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,11 +18,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserPinnedSubjectRepository pinnedSubjectRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           UserPinnedSubjectRepository pinnedSubjectRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.pinnedSubjectRepository = pinnedSubjectRepository;
     }
 
     @Override
@@ -100,5 +105,29 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public PinResult pinSubject(String username, String subjectName) {
+        if (pinnedSubjectRepository.existsByUserUsernameAndSubjectName(username, subjectName)) {
+            return PinResult.ALREADY_PINNED;
+        }
+        User user = userRepository.findByUsername(username).orElseThrow();
+        pinnedSubjectRepository.save(new UserPinnedSubject(user, subjectName));
+        return PinResult.OK;
+    }
+
+    @Override
+    public boolean unpinSubject(String username, String subjectName) {
+        if (!pinnedSubjectRepository.existsByUserUsernameAndSubjectName(username, subjectName)) {
+            return false;
+        }
+        pinnedSubjectRepository.deleteByUserUsernameAndSubjectName(username, subjectName);
+        return true;
+    }
+
+    @Override
+    public List<String> getPinnedSubjects(String username) {
+        return pinnedSubjectRepository.findSubjectNamesByUsername(username);
     }
 }
