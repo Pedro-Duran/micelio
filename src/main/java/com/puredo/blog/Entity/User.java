@@ -39,6 +39,9 @@ public class User {
     @Column
     private String avatarUrl;
 
+    @Column(length = 100)
+    private String graphPreset;
+
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     @ToString.Exclude

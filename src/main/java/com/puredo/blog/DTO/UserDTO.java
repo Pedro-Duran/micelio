@@ -51,6 +51,11 @@ public enum UserDTO {;
         }
 
         @Value
+        public static class Preferences {
+            String graphPreset;
+        }
+
+        @Value
         public static class Update implements Id, Username, Password {
             Long id;
             String username;
@@ -75,6 +80,11 @@ public enum UserDTO {;
             Long id;
             String username;
             String password;
+        }
+
+        @Value
+        public static class Preferences {
+            String graphPreset;
         }
     }
 

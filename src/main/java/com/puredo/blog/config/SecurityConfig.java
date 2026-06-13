@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,  "/api/posts/mine").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/users/{username}/isFollowing").authenticated()
+                .requestMatchers(HttpMethod.GET,  "/api/users/preferences").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/users/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/createUser").permitAll()

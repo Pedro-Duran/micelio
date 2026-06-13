@@ -130,4 +130,18 @@ public class UserServiceImpl implements UserService {
     public List<String> getPinnedSubjects(String username) {
         return pinnedSubjectRepository.findSubjectNamesByUsername(username);
     }
+
+    @Override
+    public UserDTO.Response.Preferences getPreferences(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+        return new UserDTO.Response.Preferences(user.getGraphPreset());
+    }
+
+    @Override
+    public UserDTO.Response.Preferences updatePreferences(String username, UserDTO.Request.Preferences request) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+        user.setGraphPreset(request.getGraphPreset());
+        userRepository.save(user);
+        return new UserDTO.Response.Preferences(user.getGraphPreset());
+    }
 }

@@ -100,6 +100,20 @@ public class UserController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    // --- Preferences ---
+
+    @GetMapping("/preferences")
+    public ResponseEntity<UserDTO.Response.Preferences> getPreferences(Authentication authentication) {
+        return ResponseEntity.ok(userService.getPreferences(authentication.getName()));
+    }
+
+    @PutMapping("/preferences")
+    public ResponseEntity<UserDTO.Response.Preferences> updatePreferences(
+            @RequestBody UserDTO.Request.Preferences request,
+            Authentication authentication) {
+        return ResponseEntity.ok(userService.updatePreferences(authentication.getName(), request));
+    }
+
     // --- Pinned subjects ---
 
     @PostMapping("/subjects/pin")

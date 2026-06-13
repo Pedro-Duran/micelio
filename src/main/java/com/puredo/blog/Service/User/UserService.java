@@ -21,4 +21,7 @@ public interface UserService {
     PinResult pinSubject(String username, String subjectName);
     boolean unpinSubject(String username, String subjectName);
     List<String> getPinnedSubjects(String username);
+
+    UserDTO.Response.Preferences getPreferences(String username);
+    UserDTO.Response.Preferences updatePreferences(String username, UserDTO.Request.Preferences request);
 }
