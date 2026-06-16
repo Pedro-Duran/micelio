@@ -36,4 +36,17 @@ public class AuthController {
         boolean success = authService.resetPassword(request);
         return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthDTO.Response.Refreshed> refresh(@RequestBody AuthDTO.Request.RefreshToken request) {
+        return authService.refresh(request.getRefreshToken())
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody AuthDTO.Request.RefreshToken request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.ok().build();
+    }
 }

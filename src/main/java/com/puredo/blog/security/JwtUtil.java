@@ -16,15 +16,20 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000;
+    @Value("${jwt.access-token-expiration-ms}")
+    private long accessTokenExpirationMs;
 
     public String generateToken(String username) {
         return Jwts.builder()
             .subject(username)
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
+            .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
             .signWith(getSigningKey())
             .compact();
+    }
+
+    public long getAccessTokenExpirationSeconds() {
+        return accessTokenExpirationMs / 1000;
     }
 
     public String extractUsername(String token) {

@@ -1,6 +1,9 @@
 package com.puredo.blog.security;
 
+import com.puredo.blog.DTO.AuthDTO;
+import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Service.Auth.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +18,7 @@ import java.io.IOException;
 @Component
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
     private final UserRepository userRepository;
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepository;
 
@@ -23,10 +26,10 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     private String frontendUrl;
 
     @Autowired
-    public OAuth2AuthenticationSuccessHandler(JwtUtil jwtUtil,
+    public OAuth2AuthenticationSuccessHandler(AuthService authService,
                                               UserRepository userRepository,
                                               HttpCookieOAuth2AuthorizationRequestRepository cookieRepository) {
-        this.jwtUtil = jwtUtil;
+        this.authService = authService;
         this.userRepository = userRepository;
         this.cookieRepository = cookieRepository;
     }
@@ -37,13 +40,13 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
-        String username = userRepository.findByEmail(email)
-                .map(com.puredo.blog.Entity.User::getUsername)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("Usuário OAuth2 não encontrado após autenticação"));
 
         cookieRepository.removeAuthorizationRequest(request, response);
 
-        String token = jwtUtil.generateToken(username);
-        response.sendRedirect(frontendUrl + "/oauth2/callback?token=" + token);
+        AuthDTO.Response.Token tokens = authService.issueTokens(user);
+        response.sendRedirect(frontendUrl + "/oauth2/callback?token=" + tokens.getAccessToken()
+                + "&refreshToken=" + tokens.getRefreshToken());
     }
 }

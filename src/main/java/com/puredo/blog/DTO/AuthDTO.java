@@ -26,14 +26,29 @@ public enum AuthDTO {;
             String token;
             String newPassword;
         }
+
+        @Data
+        @Value
+        public static class RefreshToken {
+            String refreshToken;
+        }
     }
 
     public enum Response {;
 
         @Value
         public static class Token {
-            String token;
+            String accessToken;
+            String refreshToken;
+            long expiresIn;
             String username;
+        }
+
+        @Value
+        public static class Refreshed {
+            String accessToken;
+            String refreshToken;
+            long expiresIn;
         }
     }
 }
