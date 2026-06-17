@@ -2,9 +2,11 @@ package com.puredo.blog.Service.Follow;
 
 import com.puredo.blog.DTO.UserDTO;
 import com.puredo.blog.Entity.Follow;
+import com.puredo.blog.Entity.NotificationType;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Follow.FollowRepository;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +19,14 @@ public class FollowServiceImpl implements FollowService {
 
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public FollowServiceImpl(FollowRepository followRepository, UserRepository userRepository) {
+    public FollowServiceImpl(FollowRepository followRepository, UserRepository userRepository,
+                             NotificationService notificationService) {
         this.followRepository = followRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -41,6 +46,8 @@ public class FollowServiceImpl implements FollowService {
         follow.setFollower(follower);
         follow.setFollowed(followed);
         followRepository.save(follow);
+
+        notificationService.notify(followedUsername, NotificationType.FOLLOW, followerUsername, follower.getAvatarUrl(), null, null);
     }
 
     @Override

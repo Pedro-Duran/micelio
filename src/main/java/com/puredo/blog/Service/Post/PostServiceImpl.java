@@ -3,6 +3,7 @@ package com.puredo.blog.Service.Post;
 import com.puredo.blog.DTO.PostDTO;
 import com.puredo.blog.Entity.Event;
 import com.puredo.blog.Entity.EventType;
+import com.puredo.blog.Entity.NotificationType;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.StubSubscription;
 import com.puredo.blog.Entity.User;
@@ -11,6 +12,7 @@ import com.puredo.blog.Repository.Follow.FollowRepository;
 import com.puredo.blog.Repository.Post.PostRepository;
 import com.puredo.blog.Repository.StubSubscription.StubSubscriptionRepository;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,18 +32,21 @@ public class PostServiceImpl implements PostService {
     private final FollowRepository followRepository;
     private final StubSubscriptionRepository subscriptionRepository;
     private final StubNotificationService stubNotificationService;
+    private final NotificationService notificationService;
 
     @Autowired
     public PostServiceImpl(PostRepository postRepository, EventRepository eventRepository,
                            UserRepository userRepository, FollowRepository followRepository,
                            StubSubscriptionRepository subscriptionRepository,
-                           StubNotificationService stubNotificationService) {
+                           StubNotificationService stubNotificationService,
+                           NotificationService notificationService) {
         this.postRepository = postRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.followRepository = followRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.stubNotificationService = stubNotificationService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -233,6 +238,14 @@ public class PostServiceImpl implements PostService {
         stubEvent.setUsername(subscriberUsername);
         eventRepository.save(stubEvent);
 
+        notificationService.notify(
+                post.getAuthor().getUsername(),
+                NotificationType.STUB_SUBSCRIBED,
+                subscriberUsername,
+                user.getAvatarUrl(),
+                postId,
+                post.getTitle()
+        );
         return true;
     }
 

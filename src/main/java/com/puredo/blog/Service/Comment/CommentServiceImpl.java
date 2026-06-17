@@ -2,11 +2,13 @@ package com.puredo.blog.Service.Comment;
 
 import com.puredo.blog.DTO.CommentDTO;
 import com.puredo.blog.Entity.Comment;
+import com.puredo.blog.Entity.NotificationType;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Comment.CommentRepository;
 import com.puredo.blog.Repository.Post.PostRepository;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,12 +23,15 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public CommentServiceImpl(CommentRepository commentRepository, PostRepository postRepository, UserRepository userRepository) {
+    public CommentServiceImpl(CommentRepository commentRepository, PostRepository postRepository,
+                              UserRepository userRepository, NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -40,7 +45,16 @@ public class CommentServiceImpl implements CommentService {
         comment.setAuthor(author.get());
         comment.setPost(post.get());
 
-        return Optional.of(toDTO(commentRepository.save(comment)));
+        CommentDTO.Response.Comment saved = toDTO(commentRepository.save(comment));
+        notificationService.notify(
+                post.get().getAuthor().getUsername(),
+                NotificationType.COMMENT,
+                username,
+                author.get().getAvatarUrl(),
+                post.get().getId(),
+                post.get().getTitle()
+        );
+        return Optional.of(saved);
     }
 
     @Override
@@ -55,7 +69,17 @@ public class CommentServiceImpl implements CommentService {
         reply.setPost(parent.get().getPost());
         reply.setParentComment(parent.get());
 
-        return Optional.of(toDTO(commentRepository.save(reply)));
+        CommentDTO.Response.Comment saved = toDTO(commentRepository.save(reply));
+        Post post = parent.get().getPost();
+        notificationService.notify(
+                parent.get().getAuthor().getUsername(),
+                NotificationType.COMMENT,
+                username,
+                author.get().getAvatarUrl(),
+                post.getId(),
+                post.getTitle()
+        );
+        return Optional.of(saved);
     }
 
     @Override

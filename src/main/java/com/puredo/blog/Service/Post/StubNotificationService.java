@@ -1,11 +1,13 @@
 package com.puredo.blog.Service.Post;
 
+import com.puredo.blog.Entity.NotificationType;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.StubSubscription;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Post.PostRepository;
 import com.puredo.blog.Repository.StubSubscription.StubSubscriptionRepository;
 import com.puredo.blog.Service.Email.EmailService;
+import com.puredo.blog.Service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -20,6 +22,7 @@ public class StubNotificationService {
     private final StubSubscriptionRepository subscriptionRepository;
     private final PostRepository postRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -27,10 +30,12 @@ public class StubNotificationService {
     @Autowired
     public StubNotificationService(StubSubscriptionRepository subscriptionRepository,
                                    PostRepository postRepository,
-                                   EmailService emailService) {
+                                   EmailService emailService,
+                                   NotificationService notificationService) {
         this.subscriptionRepository = subscriptionRepository;
         this.postRepository = postRepository;
         this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     @Async
@@ -43,6 +48,14 @@ public class StubNotificationService {
 
         for (StubSubscription sub : subscriptions) {
             User subscriber = sub.getUser();
+            notificationService.notify(
+                    subscriber.getUsername(),
+                    NotificationType.STUB_PUBLISHED,
+                    authorUsername,
+                    managedPost.getAuthor().getAvatarUrl(),
+                    managedPost.getId(),
+                    managedPost.getTitle()
+            );
             if (subscriber.getEmail() == null) continue;
             emailService.sendStubPublished(
                 subscriber.getEmail(),

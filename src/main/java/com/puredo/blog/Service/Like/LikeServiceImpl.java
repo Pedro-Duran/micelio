@@ -1,11 +1,13 @@
 package com.puredo.blog.Service.Like;
 
 import com.puredo.blog.Entity.Like;
+import com.puredo.blog.Entity.NotificationType;
 import com.puredo.blog.Entity.Post;
 import com.puredo.blog.Entity.User;
 import com.puredo.blog.Repository.Like.LikeRepository;
 import com.puredo.blog.Repository.Post.PostRepository;
 import com.puredo.blog.Repository.User.UserRepository;
+import com.puredo.blog.Service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +20,15 @@ public class LikeServiceImpl implements LikeService {
     private final LikeRepository likeRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public LikeServiceImpl(LikeRepository likeRepository, PostRepository postRepository, UserRepository userRepository) {
+    public LikeServiceImpl(LikeRepository likeRepository, PostRepository postRepository,
+                           UserRepository userRepository, NotificationService notificationService) {
         this.likeRepository = likeRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -37,6 +42,15 @@ public class LikeServiceImpl implements LikeService {
         like.setPost(post);
         like.setUser(user);
         likeRepository.save(like);
+
+        notificationService.notify(
+                post.getAuthor().getUsername(),
+                NotificationType.LIKE,
+                username,
+                user.getAvatarUrl(),
+                postId,
+                post.getTitle()
+        );
         return true;
     }
 
