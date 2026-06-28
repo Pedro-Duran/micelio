@@ -169,6 +169,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void deletePostById(Long id) {
         eventRepository.deleteByPostId(id);
+        subscriptionRepository.deleteByPostId(id);
 
         List<Post> postsWithLink = postRepository.findPostsByLinkId(id);
         for (Post post : postsWithLink) {

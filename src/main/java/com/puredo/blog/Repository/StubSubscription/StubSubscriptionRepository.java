@@ -19,6 +19,8 @@ public interface StubSubscriptionRepository extends JpaRepository<StubSubscripti
     boolean existsByPostIdAndUserUsername(Long postId, String username);
     void deleteByPost(Post post);
     @Transactional
+    void deleteByPostId(Long postId);
+    @Transactional
     void deleteByPostIdAndUserUsername(Long postId, String username);
     long countByPostId(Long postId);
     @Query("SELECT s.post.id, COUNT(s) FROM StubSubscription s WHERE s.post.id IN :postIds GROUP BY s.post.id")
